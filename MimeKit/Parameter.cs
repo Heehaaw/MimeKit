@@ -43,6 +43,7 @@ namespace MimeKit
 		ParameterEncodingMethod encodingMethod;
 		Encoding encoding;
 		string text;
+		private bool forceQuoteValue;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Parameter"/> class.
@@ -268,9 +269,20 @@ namespace MimeKit
 		}
 
 		/// <summary>
-		/// Forces quotes around the parameter value
+		/// Forces quotes around the parameter value.
 		/// </summary>
-		public bool ForceQuote { get; set; } = false;
+		public bool ForceQuoteValue
+		{
+			get => this.forceQuoteValue;
+			set
+			{
+				if (this.forceQuoteValue == value)
+					return;
+
+				this.forceQuoteValue = value;
+				this.OnChanged();
+			}
+		}
 
 		static bool IsAttr(byte c)
 		{
@@ -316,7 +328,7 @@ namespace MimeKit
 			if (name.Length + 1 + value.Length >= options.MaxLineLength)
 				return encode;
 
-			if (ForceQuote)
+			if (this.ForceQuoteValue)
 				method = EncodeMethod.Quote;
 			else
 				for (int i = 0; i < value.Length; i++)
