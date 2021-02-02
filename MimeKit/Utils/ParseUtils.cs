@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -161,7 +161,7 @@ namespace MimeKit.Utils {
 
 				if (!SkipComment (text, ref index, endIndex)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete comment token at offset {0}", startIndex), startIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete comment token at offset {0}", startIndex), startIndex, index);
 
 					return false;
 				}
@@ -195,7 +195,7 @@ namespace MimeKit.Utils {
 
 			if (index >= endIndex) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete quoted-string token at offset {0}", startIndex), startIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete quoted-string token at offset {0}", startIndex), startIndex, index);
 
 				return false;
 			}
@@ -211,6 +211,17 @@ namespace MimeKit.Utils {
 			int start = index;
 
 			while (index < endIndex && text[index].IsAtom ())
+				index++;
+
+			return index > start;
+		}
+
+		// Note: a "phrase atom" is a more lenient atom (e.g. mailbox display-name phrase atom)
+		public static bool SkipPhraseAtom (byte[] text, ref int index, int endIndex)
+		{
+			int start = index;
+
+			while (index < endIndex && text[index].IsPhraseAtom ())
 				index++;
 
 			return index > start;
@@ -258,7 +269,7 @@ namespace MimeKit.Utils {
 			do {
 				if (!text[index].IsAtom ()) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid {0} token at offset {1}", tokenType, startIndex), startIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid {0} token at offset {1}", tokenType, startIndex), startIndex, index);
 
 					return false;
 				}
@@ -322,7 +333,7 @@ namespace MimeKit.Utils {
 
 				if (index >= endIndex) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete domain literal token at offset {0}", startIndex), startIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete domain literal token at offset {0}", startIndex), startIndex, index);
 
 					return false;
 				}
@@ -332,7 +343,7 @@ namespace MimeKit.Utils {
 
 				if (!text[index].IsDomain ()) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid domain literal token at offset {0}", startIndex), startIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid domain literal token at offset {0}", startIndex), startIndex, index);
 
 					return false;
 				}
@@ -384,7 +395,7 @@ namespace MimeKit.Utils {
 
 			if (index >= endIndex) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
 
 				return false;
 			}
@@ -420,7 +431,7 @@ namespace MimeKit.Utils {
 				if (index >= endIndex) {
 					if (angleAddr) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -434,7 +445,7 @@ namespace MimeKit.Utils {
 
 				if (text[index] != (byte) '.') {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid msg-id token at offset {0}", tokenIndex), tokenIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid msg-id token at offset {0}", tokenIndex), tokenIndex, index);
 
 					return false;
 				}
@@ -447,7 +458,7 @@ namespace MimeKit.Utils {
 
 				if (index >= endIndex) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete msg-id at offset {0}", tokenIndex), tokenIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete msg-id at offset {0}", tokenIndex), tokenIndex, index);
 
 					return false;
 				}
@@ -487,7 +498,7 @@ namespace MimeKit.Utils {
 					// https://github.com/jstedfast/MimeKit/issues/102
 
 					//if (throwOnError)
-					//	throw new ParseException (string.Format ("Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
+					//	throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
 
 					//return false;
 				}
@@ -495,7 +506,7 @@ namespace MimeKit.Utils {
 
 			if (angleAddr && (index >= endIndex || text[index] != '>')) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete msg-id token at offset {0}", tokenIndex), tokenIndex, index);
 
 				return false;
 			}

@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,12 @@ namespace UnitTests.Tnef {
 	[TestFixture]
 	public class TnefReaderStreamTests
 	{
+		static readonly string DataDir = Path.Combine (TestHelper.ProjectDir, "TestData", "tnef");
+
 		[Test]
 		public void TestTnefReaderStream ()
 		{
-			using (var stream = File.OpenRead ("../../TestData/tnef/winmail.tnef")) {
+			using (var stream = File.OpenRead (Path.Combine (DataDir, "winmail.tnef"))) {
 				using (var reader = new TnefReader (stream)) {
 					var buffer = new byte[1024];
 

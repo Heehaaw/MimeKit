@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -107,8 +107,8 @@ namespace UnitTests.Text {
 		[Test]
 		public void TestSimpleHtmlToHtml ()
 		{
-			string expected = File.ReadAllText ("../../TestData/html/xamarin3.xhtml");
-			string text = File.ReadAllText ("../../TestData/html/xamarin3.html");
+			string expected = File.ReadAllText (Path.Combine (TestHelper.ProjectDir, "TestData", "html", "xamarin3.xhtml"));
+			string text = File.ReadAllText (Path.Combine (TestHelper.ProjectDir, "TestData", "html", "xamarin3.html"));
 			var converter = new HtmlToHtml { Header = null, Footer = null, HtmlTagCallback = ReplaceUrlsWithFileNames };
 			var result = converter.Convert (text);
 

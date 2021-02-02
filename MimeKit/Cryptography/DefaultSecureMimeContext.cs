@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,8 +83,20 @@ namespace MimeKit.Cryptography {
 			DefaultDatabasePath = Path.Combine (path, "smime.db");
 		}
 
+		static void CheckIsAvailable ()
+		{
+			if (!SqliteCertificateDatabase.IsAvailable) {
+				const string format = "SQLite is not available. Install the {0} nuget.";
+#if NETSTANDARD1_3 || NETSTANDARD1_6
+				throw new NotSupportedException (string.Format (format, "Microsoft.Data.Sqlite"));
+#else
+				throw new NotSupportedException (string.Format (format, "System.Data.SQLite"));
+#endif
+			}
+		}
+
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.DefaultSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="DefaultSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Allows the program to specify its own location for the SQLite database. If the file does not exist,
@@ -118,8 +130,7 @@ namespace MimeKit.Cryptography {
 			if (password == null)
 				throw new ArgumentNullException (nameof (password));
 
-			if (!SqliteCertificateDatabase.IsAvailable)
-				throw new NotSupportedException ("Mono.Data.Sqlite is not available.");
+			CheckIsAvailable ();
 
 			var dir = Path.GetDirectoryName (fileName);
 			var exists = File.Exists (fileName);
@@ -135,7 +146,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.DefaultSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="DefaultSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Allows the program to specify its own password for the default database.</para>
@@ -156,7 +167,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.DefaultSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="DefaultSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Not recommended for production use as the password to unlock the private keys is hard-coded.</para>
@@ -176,7 +187,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.DefaultSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="DefaultSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// This constructor is useful for supplying a custom <see cref="IX509CertificateDatabase"/>.
@@ -290,10 +301,8 @@ namespace MimeKit.Cryptography {
 			keyUsage[(int) X509KeyUsageBits.KeyCertSign] = true;
 			selector.KeyUsage = keyUsage;
 
-			foreach (var record in dbase.Find (selector, true, X509CertificateRecordFields.Certificate)) {
-				if (record.Certificate.IsSelfSigned ())
-					anchors.Add (new TrustAnchor (record.Certificate, null));
-			}
+			foreach (var record in dbase.Find (selector, true, X509CertificateRecordFields.Certificate))
+				anchors.Add (new TrustAnchor (record.Certificate, null));
 
 			return anchors;
 		}

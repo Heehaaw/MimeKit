@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -576,12 +576,12 @@ namespace MimeKit.Tnef {
 		/// </exception>
 		public bool ReadNextProperty ()
 		{
+			while (ReadNextValue ()) {
+				// skip over the remaining value(s) for the current property...
+			}
+
 			if (propertyIndex >= propertyCount)
 				return false;
-
-			while (ReadNextValue ()) {
-				// skip over the value...
-			}
 
 			try {
 				var type = (TnefPropertyType) ReadInt16 ();
@@ -624,12 +624,12 @@ namespace MimeKit.Tnef {
 		/// </exception>
 		public bool ReadNextRow ()
 		{
+			while (ReadNextProperty ()) {
+				// skip over the remaining property/properties in the current row...
+			}
+
 			if (rowIndex >= rowCount)
 				return false;
-
-			while (ReadNextProperty ()) {
-				// skip over the property...
-			}
 
 			try {
 				LoadPropertyCount ();
@@ -789,7 +789,7 @@ namespace MimeKit.Tnef {
 
 			var bytes = new byte[n];
 
-			n = reader.ReadAttributeRawValue (bytes, 0, bytes.Length);
+			n = reader.ReadAttributeRawValue (bytes, 0, n);
 
 			var flush = reader.StreamOffset >= valueEndOffset;
 
@@ -1536,10 +1536,10 @@ namespace MimeKit.Tnef {
 		}
 
 		/// <summary>
-		/// Serves as a hash function for a <see cref="MimeKit.Tnef.TnefPropertyReader"/> object.
+		/// Serves as a hash function for a <see cref="TnefPropertyReader"/> object.
 		/// </summary>
 		/// <remarks>
-		/// Serves as a hash function for a <see cref="MimeKit.Tnef.TnefPropertyReader"/> object.
+		/// Serves as a hash function for a <see cref="TnefPropertyReader"/> object.
 		/// </remarks>
 		/// <returns>A hash code for this instance that is suitable for use in hashing algorithms
 		/// and data structures such as a hash table.</returns>
@@ -1549,14 +1549,14 @@ namespace MimeKit.Tnef {
 		}
 
 		/// <summary>
-		/// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="MimeKit.Tnef.TnefPropertyReader"/>.
+		/// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="TnefPropertyReader"/>.
 		/// </summary>
 		/// <remarks>
-		/// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="MimeKit.Tnef.TnefPropertyReader"/>.
+		/// Determines whether the specified <see cref="System.Object"/> is equal to the current <see cref="TnefPropertyReader"/>.
 		/// </remarks>
-		/// <param name="obj">The <see cref="System.Object"/> to compare with the current <see cref="MimeKit.Tnef.TnefPropertyReader"/>.</param>
+		/// <param name="obj">The <see cref="System.Object"/> to compare with the current <see cref="TnefPropertyReader"/>.</param>
 		/// <returns><c>true</c> if the specified <see cref="System.Object"/> is equal to the current
-		/// <see cref="MimeKit.Tnef.TnefPropertyReader"/>; otherwise, <c>false</c>.</returns>
+		/// <see cref="TnefPropertyReader"/>; otherwise, <c>false</c>.</returns>
 		public override bool Equals (object obj)
 		{
 			var prop = obj as TnefPropertyReader;

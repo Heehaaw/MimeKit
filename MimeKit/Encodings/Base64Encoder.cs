@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ namespace MimeKit.Encodings {
 		byte saved;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Encodings.Base64Encoder"/> class.
+		/// Initialize a new instance of the <see cref="Base64Encoder"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new base64 encoder.
@@ -72,7 +72,7 @@ namespace MimeKit.Encodings {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Encodings.Base64Encoder"/> class.
+		/// Initialize a new instance of the <see cref="Base64Encoder"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new base64 encoder.
@@ -271,9 +271,10 @@ namespace MimeKit.Encodings {
 				else
 					*outptr++ = (byte) '=';
 				*outptr++ = (byte) '=';
+				quartets++;
 			}
 
-			if (!rfc2047)
+			if (!rfc2047 && quartets > 0)
 				*outptr++ = (byte) '\n';
 
 			Reset ();

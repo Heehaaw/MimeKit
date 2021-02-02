@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ namespace MimeKit.Tnef {
 		bool disposed;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Tnef.TnefReaderStream"/> class.
+		/// Initialize a new instance of the <see cref="TnefReaderStream"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a stream for reading a raw value from the <see cref="TnefReader"/>.
@@ -181,7 +181,7 @@ namespace MimeKit.Tnef {
 				int valueLeft = valueEndOffset - reader.StreamOffset;
 				var buf = new byte[valueLeft];
 
-				reader.ReadAttributeRawValue (buf, 0, buf.Length);
+				reader.ReadAttributeRawValue (buf, 0, valueLeft);
 			}
 
 			return nread;

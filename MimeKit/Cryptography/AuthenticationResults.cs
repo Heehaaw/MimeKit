@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.AuthenticationResults"/> class.
+		/// Initialize a new instance of the <see cref="AuthenticationResults"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="AuthenticationResults"/>.
@@ -223,7 +223,7 @@ namespace MimeKit.Cryptography {
 			return (c >= (byte) 'A' && c <= (byte) 'Z') ||
 				(c >= (byte) 'a' && c <= (byte) 'z') ||
 				(c >= (byte) '0' && c <= (byte) '9') ||
-				c == (byte) '-';
+				c == (byte) '-' || c == (byte) '_';
 		}
 
 		static bool SkipKeyword (byte[] text, ref int index, int endIndex)
@@ -263,32 +263,7 @@ namespace MimeKit.Cryptography {
 			if (index > startIndex && text[index - 1] != (byte) '.')
 				return true;
 
-			// don't advance `index` on failure
-			index = startIndex;
-
 			return false;
-		}
-
-		// pvalue := [CFWS] ( value / [ [ local-part ] "@" ] domain-name ) [CFWS]
-		// value  := token / quoted-string
-		// token  := 1*<any (US-ASCII) CHAR except SPACE, CTLs, or tspecials>
-		// tspecials :=  "(" / ")" / "<" / ">" / "@" / "," / ";" / ":" / "\" / <"> / "/" / "[" / "]" / "?" / "="
-		static bool IsPValueToken (byte c)
-		{
-			// Note: We're allowing '/' because it is a base64 character
-			//
-			// See https://github.com/jstedfast/MimeKit/issues/518 for details.
-			return c.IsToken () || c == (byte) '/';
-		}
-
-		static bool SkipPValueToken (byte[] text, ref int index, int endIndex)
-		{
-			int start = index;
-
-			while (index < endIndex && IsPValueToken (text[index]))
-				index++;
-
-			return index > start;
 		}
 
 		static bool SkipPropertyValue (byte[] text, ref int index, int endIndex, out bool quoted)
@@ -309,59 +284,11 @@ namespace MimeKit.Cryptography {
 
 			quoted = false;
 
-			if (text[index] == (byte) '@') {
-				// "@" domain-name
+			// Note: we're forced to accept even tspecials in the property value because they are used in the real-world.
+			// See https://github.com/jstedfast/MimeKit/issues/518 ('/') and https://github.com/jstedfast/MimeKit/issues/590 ('=')
+			// for details.
+			while (index < endIndex && !text[index].IsWhitespace() && text[index] != (byte) ';' && text[index] != (byte) '(')
 				index++;
-
-				if (!SkipDomain (text, ref index, endIndex))
-					return false;
-
-				return true;
-			}
-
-			if (!SkipPValueToken (text, ref index, endIndex))
-				return false;
-
-			if (index < endIndex) {
-				if (text[index] == (byte) '@') {
-					// local-part@domain-name
-					index++;
-
-					if (!SkipDomain (text, ref index, endIndex))
-						return false;
-				} else if (text[index] != ';' && !text[index].IsWhitespace ()) {
-					return false;
-				} else {
-					int multiIndex = index;
-
-					ParseUtils.SkipWhiteSpace (text, ref multiIndex, endIndex);
-
-					if (multiIndex < endIndex && text[multiIndex] == (byte) ';') {
-						multiIndex++;
-
-						ParseUtils.SkipWhiteSpace (text, ref multiIndex, endIndex);
-
-						while (multiIndex < endIndex && SkipDomain (text, ref multiIndex, endIndex)) {
-							int startIndex = multiIndex;
-
-							ParseUtils.SkipWhiteSpace (text, ref multiIndex, endIndex);
-
-							if (multiIndex >= endIndex) {
-								index = startIndex;
-								break;
-							}
-
-							if (text[multiIndex] != (byte) ';')
-								break;
-
-							index = startIndex;
-							multiIndex++;
-
-							ParseUtils.SkipWhiteSpace (text, ref multiIndex, endIndex);
-						}
-					}
-				}
-			}
 
 			return true;
 		}
@@ -372,6 +299,9 @@ namespace MimeKit.Cryptography {
 			bool quoted;
 
 			while (index < endIndex) {
+				string srvid = null;
+
+			method_token:
 				if (!ParseUtils.SkipCommentsAndWhiteSpace (text, ref index, endIndex, throwOnError))
 					return false;
 
@@ -383,9 +313,48 @@ namespace MimeKit.Cryptography {
 				// skip the method name
 				if (!SkipKeyword (text, ref index, endIndex)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid method token at offset {0}", methodIndex), methodIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid method token at offset {0}", methodIndex), methodIndex, index);
 
 					return false;
+				}
+
+				// Note: Office365 seems to (sometimes) place a method-specific authserv-id token before each
+				// method. This block of code is here to handle that case.
+				//
+				// See https://github.com/jstedfast/MimeKit/issues/527 for details.
+				if (srvid == null && index < endIndex && text[index] == '.') {
+					index = methodIndex;
+
+					if (!SkipDomain (text, ref index, endIndex)) {
+						if (throwOnError)
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid Office365 authserv-id token at offset {0}", methodIndex), methodIndex, index);
+
+						return false;
+					}
+
+					srvid = Encoding.UTF8.GetString (text, methodIndex, index - methodIndex);
+
+					if (!ParseUtils.SkipCommentsAndWhiteSpace (text, ref index, endIndex, throwOnError))
+						return false;
+
+					if (index >= endIndex) {
+						if (throwOnError)
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Missing semi-colon after Office365 authserv-id token at offset {0}", methodIndex), methodIndex, index);
+
+						return false;
+					}
+
+					if (text[index] != (byte) ';') {
+						if (throwOnError)
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Unexpected token after Office365 authserv-id token at offset {0}", index), index, index);
+
+						return false;
+					}
+
+					// skip over ';'
+					index++;
+
+					goto method_token;
 				}
 
 				var method = Encoding.ASCII.GetString (text, methodIndex, index - methodIndex);
@@ -396,14 +365,14 @@ namespace MimeKit.Cryptography {
 				if (index >= endIndex) {
 					if (method != "none") {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
 
 						return false;
 					}
 
 					if (authres.Results.Count > 0) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid no-result token at offset {0}", methodIndex), methodIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid no-result token at offset {0}", methodIndex), methodIndex, index);
 
 						return false;
 					}
@@ -412,6 +381,7 @@ namespace MimeKit.Cryptography {
 				}
 
 				var resinfo = new AuthenticationMethodResult (method);
+				resinfo.Office365AuthenticationServiceIdentifier = srvid;
 				authres.Results.Add (resinfo);
 
 				int tokenIndex;
@@ -427,7 +397,7 @@ namespace MimeKit.Cryptography {
 
 					if (!ParseUtils.TryParseInt32 (text, ref index, endIndex, out int version)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid method-version token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid method-version token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -439,7 +409,7 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
 
 						return false;
 					}
@@ -447,7 +417,7 @@ namespace MimeKit.Cryptography {
 
 				if (text[index] != (byte) '=') {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid methodspec token at offset {0}", methodIndex), methodIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid methodspec token at offset {0}", methodIndex), methodIndex, index);
 
 					return false;
 				}
@@ -460,7 +430,7 @@ namespace MimeKit.Cryptography {
 
 				if (index >= endIndex) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete methodspec token at offset {0}", methodIndex), methodIndex, index);
 
 					return false;
 				}
@@ -469,7 +439,7 @@ namespace MimeKit.Cryptography {
 
 				if (!SkipKeyword (text, ref index, endIndex)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid result token at offset {0}", tokenIndex), tokenIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid result token at offset {0}", tokenIndex), tokenIndex, index);
 
 					return false;
 				}
@@ -478,12 +448,12 @@ namespace MimeKit.Cryptography {
 
 				ParseUtils.SkipWhiteSpace (text, ref index, endIndex);
 
-				if (index < endIndex && text[index] == '(') {
+				if (index < endIndex && text[index] == (byte) '(') {
 					int commentIndex = index;
 
 					if (!ParseUtils.SkipComment (text, ref index, endIndex)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete comment token at offset {0}", commentIndex), commentIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete comment token at offset {0}", commentIndex), commentIndex, index);
 
 						return false;
 					}
@@ -509,7 +479,7 @@ namespace MimeKit.Cryptography {
 
 				if (!SkipKeyword (text, ref index, endIndex)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid reasonspec or propspec token at offset {0}", tokenIndex), tokenIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid reasonspec or propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 					return false;
 				}
@@ -522,14 +492,14 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete {0}spec token at offset {1}", value, tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete {0}spec token at offset {1}", value, tokenIndex), tokenIndex, index);
 
 						return false;
 					}
 
 					if (text[index] != (byte) '=') {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid {0}spec token at offset {1}", value, tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid {0}spec token at offset {1}", value, tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -543,7 +513,7 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex || !SkipValue (text, ref index, endIndex, out quoted)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid {0}spec value token at offset {1}", value, reasonIndex), reasonIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid {0}spec value token at offset {1}", value, reasonIndex), reasonIndex, index);
 
 						return false;
 					}
@@ -574,7 +544,7 @@ namespace MimeKit.Cryptography {
 
 					if (!SkipKeyword (text, ref index, endIndex)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -591,14 +561,14 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
 
 					if (text[index] != (byte) '.') {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -610,7 +580,7 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -619,7 +589,7 @@ namespace MimeKit.Cryptography {
 
 					if (!SkipKeyword (text, ref index, endIndex)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid property token at offset {0}", propertyIndex), propertyIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid property token at offset {0}", propertyIndex), propertyIndex, index);
 
 						return false;
 					}
@@ -631,14 +601,14 @@ namespace MimeKit.Cryptography {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
 
 					if (text[index] != (byte) '=') {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -648,18 +618,11 @@ namespace MimeKit.Cryptography {
 					if (!ParseUtils.SkipCommentsAndWhiteSpace (text, ref index, endIndex, throwOnError))
 						return false;
 
-					if (index >= endIndex) {
-						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
-
-						return false;
-					}
-
 					int valueIndex = index;
 
-					if (!SkipPropertyValue (text, ref index, endIndex, out quoted)) {
+					if (index >= text.Length || !SkipPropertyValue (text, ref index, endIndex, out quoted)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -669,7 +632,7 @@ namespace MimeKit.Cryptography {
 					if (quoted)
 						value = MimeUtils.Unquote (value);
 
-					var propspec = new AuthenticationMethodProperty (ptype, property, value);
+					var propspec = new AuthenticationMethodProperty (ptype, property, value, quoted);
 					resinfo.Properties.Add (propspec);
 
 					if (!ParseUtils.SkipCommentsAndWhiteSpace (text, ref index, endIndex, throwOnError))
@@ -682,7 +645,7 @@ namespace MimeKit.Cryptography {
 
 					if (!SkipKeyword (text, ref index, endIndex)) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid propspec token at offset {0}", tokenIndex), tokenIndex, index);
 
 						return false;
 					}
@@ -714,7 +677,7 @@ namespace MimeKit.Cryptography {
 
 				if (index >= endIndex || !SkipValue (text, ref index, endIndex, out quoted)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete authserv-id token at offset {0}", start), start, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete authserv-id token at offset {0}", start), start, index);
 
 					return false;
 				}
@@ -733,7 +696,7 @@ namespace MimeKit.Cryptography {
 						// probably i=#
 						if (instance.HasValue) {
 							if (throwOnError)
-								throw new ParseException (string.Format ("Invalid token at offset {0}", start), start, index);
+								throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid token at offset {0}", start), start, index);
 
 							return false;
 						}
@@ -761,7 +724,7 @@ namespace MimeKit.Cryptography {
 
 						if (!ParseUtils.TryParseInt32 (text, ref index, endIndex, out int i)) {
 							if (throwOnError)
-								throw new ParseException (string.Format ("Invalid instance value at offset {0}", start), start, index);
+								throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid instance value at offset {0}", start), start, index);
 
 							return false;
 						}
@@ -773,14 +736,14 @@ namespace MimeKit.Cryptography {
 
 						if (index >= endIndex) {
 							if (throwOnError)
-								throw new ParseException (string.Format ("Missing semi-colon after instance value at offset {0}", start), start, index);
+								throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Missing semi-colon after instance value at offset {0}", start), start, index);
 
 							return false;
 						}
 
-						if (text[index] != ';') {
+						if (text[index] != (byte) ';') {
 							if (throwOnError)
-								throw new ParseException (string.Format ("Unexpected token after instance value at offset {0}", index), index, index);
+								throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Unexpected token after instance value at offset {0}", index), index, index);
 
 							return false;
 						}
@@ -810,7 +773,7 @@ namespace MimeKit.Cryptography {
 
 				if (!ParseUtils.TryParseInt32 (text, ref index, endIndex, out int version)) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid authres-version at offset {0}", start), start, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid authres-version at offset {0}", start), start, index);
 
 					return false;
 				}
@@ -825,7 +788,7 @@ namespace MimeKit.Cryptography {
 
 				if (text[index] != (byte) ';') {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Unknown token at offset {0}", index), index, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Unknown token at offset {0}", index), index, index);
 
 					return false;
 				}
@@ -838,7 +801,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Tries to parse the given input buffer into a new <see cref="AuthenticationResults"/> instance.
+		/// Try to parse the given input buffer into a new <see cref="AuthenticationResults"/> instance.
 		/// </summary>
 		/// <remarks>
 		/// Parses an Authentication-Results header value from the supplied buffer starting at the given index
@@ -866,7 +829,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Tries to parse the given input buffer into a new <see cref="AuthenticationResults"/> instance.
+		/// Try to parse the given input buffer into a new <see cref="AuthenticationResults"/> instance.
 		/// </summary>
 		/// <remarks>
 		/// Parses an Authentication-Results header value from the supplied buffer.
@@ -957,7 +920,7 @@ namespace MimeKit.Cryptography {
 	public class AuthenticationMethodResult
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.AuthenticationMethodResult"/> class.
+		/// Initialize a new instance of the <see cref="AuthenticationMethodResult"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="AuthenticationMethodResult"/>.
@@ -976,7 +939,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.AuthenticationMethodResult"/> class.
+		/// Initialize a new instance of the <see cref="AuthenticationMethodResult"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="AuthenticationMethodResult"/>.
@@ -994,6 +957,22 @@ namespace MimeKit.Cryptography {
 				throw new ArgumentNullException (nameof (result));
 
 			Result = result;
+		}
+
+		/// <summary>
+		/// Get the Office365 method-specific authserv-id.
+		/// </summary>
+		/// <remarks>
+		/// <para>Gets the Office365 method-specific authserv-id.</para>
+		/// <para>An authentication service identifier is the <c>authserv-id</c> token
+		/// as defined in <a href="https://tools.ietf.org/html/rfc7601">rfc7601</a>.</para>
+		/// <para>Instead of specifying a single authentication service identifier at the
+		/// beginning of the header value, Office365 seems to provide a different
+		/// authentication service identifier for each method.</para>
+		/// </remarks>
+		/// <value>The authserv-id token.</value>
+		public string Office365AuthenticationServiceIdentifier {
+			get; internal set;
 		}
 
 		/// <summary>
@@ -1099,6 +1078,12 @@ namespace MimeKit.Cryptography {
 			var tokens = new List<string> ();
 			tokens.Add (" ");
 
+			if (Office365AuthenticationServiceIdentifier != null) {
+				tokens.Add (Office365AuthenticationServiceIdentifier);
+				tokens.Add (";");
+				tokens.Add (" ");
+			}
+
 			if (Version.HasValue) {
 				var version = Version.Value.ToString (CultureInfo.InvariantCulture);
 
@@ -1170,7 +1155,14 @@ namespace MimeKit.Cryptography {
 		/// <returns>The serialized string.</returns>
 		public override string ToString ()
 		{
-			var builder = new StringBuilder (Method);
+			var builder = new StringBuilder ();
+
+			if (Office365AuthenticationServiceIdentifier != null) {
+				builder.Append (Office365AuthenticationServiceIdentifier);
+				builder.Append ("; ");
+			}
+
+			builder.Append (Method);
 
 			if (Version.HasValue) {
 				builder.Append ('/');
@@ -1211,8 +1203,45 @@ namespace MimeKit.Cryptography {
 	/// </remarks>
 	public class AuthenticationMethodProperty
 	{
+		static readonly char[] TokenSpecials = ByteExtensions.TokenSpecials.ToCharArray ();
+		bool? quoted;
+
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.AuthenticationMethodProperty"/> class.
+		/// Initialize a new instance of the <see cref="AuthenticationMethodProperty"/> class.
+		/// </summary>
+		/// <remarks>
+		/// Creates a new <see cref="AuthenticationMethodProperty"/>.
+		/// </remarks>
+		/// <param name="ptype">The property type.</param>
+		/// <param name="property">The name of the property.</param>
+		/// <param name="value">The value of the property.</param>
+		/// <param name="quoted"><c>true</c> if the property value was originally quoted; otherwise, <c>false</c>.</param>
+		/// <exception cref="System.ArgumentNullException">
+		/// <para><paramref name="ptype"/> is <c>null</c>.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="property"/> is <c>null</c>.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="value"/> is <c>null</c>.</para>
+		/// </exception>
+		internal AuthenticationMethodProperty (string ptype, string property, string value, bool? quoted)
+		{
+			if (ptype == null)
+				throw new ArgumentNullException (nameof (ptype));
+
+			if (property == null)
+				throw new ArgumentNullException (nameof (property));
+
+			if (value == null)
+				throw new ArgumentNullException (nameof (value));
+
+			this.quoted = quoted;
+			PropertyType = ptype;
+			Property = property;
+			Value = value;
+		}
+
+		/// <summary>
+		/// Initialize a new instance of the <see cref="AuthenticationMethodProperty"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="AuthenticationMethodProperty"/>.
@@ -1227,20 +1256,8 @@ namespace MimeKit.Cryptography {
 		/// <para>-or-</para>
 		/// <para><paramref name="value"/> is <c>null</c>.</para>
 		/// </exception>
-		public AuthenticationMethodProperty (string ptype, string property, string value)
+		public AuthenticationMethodProperty (string ptype, string property, string value) : this (ptype, property, value, null)
 		{
-			if (ptype == null)
-				throw new ArgumentNullException (nameof (ptype));
-
-			if (property == null)
-				throw new ArgumentNullException (nameof (property));
-
-			if (value == null)
-				throw new ArgumentNullException (nameof (value));
-
-			PropertyType = ptype;
-			Property = property;
-			Value = value;
 		}
 
 		/// <summary>
@@ -1278,19 +1295,22 @@ namespace MimeKit.Cryptography {
 
 		internal void AppendTokens (FormatOptions options, List<string> tokens)
 		{
+			var quote = quoted.HasValue ? quoted.Value : Value.IndexOfAny (TokenSpecials) != -1;
+			var value = quote ? MimeUtils.Quote (Value) : Value;
+
 			tokens.Add (" ");
 
-			if (PropertyType.Length + 1 + Property.Length + 1 + Value.Length < options.MaxLineLength) {
-				tokens.Add ($"{PropertyType}.{Property}={Value}");
+			if (PropertyType.Length + 1 + Property.Length + 1 + value.Length < options.MaxLineLength) {
+				tokens.Add ($"{PropertyType}.{Property}={value}");
 			} else if (PropertyType.Length + 1 + Property.Length + 1 < options.MaxLineLength) {
 				tokens.Add ($"{PropertyType}.{Property}=");
-				tokens.Add (Value);
+				tokens.Add (value);
 			} else {
 				tokens.Add (PropertyType);
 				tokens.Add (".");
 				tokens.Add (Property);
 				tokens.Add ("=");
-				tokens.Add (Value);
+				tokens.Add (value);
 			}
 		}
 
@@ -1303,7 +1323,10 @@ namespace MimeKit.Cryptography {
 		/// <returns>The serialized string.</returns>
 		public override string ToString ()
 		{
-			return $"{PropertyType}.{Property}={Value}";
+			var quote = quoted.HasValue ? quoted.Value : Value.IndexOfAny (TokenSpecials) != -1;
+			var value = quote ? MimeUtils.Quote (Value) : Value;
+
+			return $"{PropertyType}.{Property}={value}";
 		}
 	}
 }

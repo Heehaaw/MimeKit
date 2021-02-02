@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -128,6 +128,18 @@ namespace UnitTests.Utils {
 			Assert.IsFalse (MimeUtils.TryParse ("1x2.3", out version), "1x2.3");
 			Assert.IsFalse (MimeUtils.TryParse ("(unterminated comment", out version), "unterminated comment");
 			Assert.IsFalse (MimeUtils.TryParse ("1 (unterminated comment", out version), "1 + unterminated comment");
+		}
+
+		[Test]
+		public void TestGenerateMessageIdWithInternationalDomain ()
+		{
+			const string domain = "Mjölnir";
+
+			var msgid = MimeUtils.GenerateMessageId (domain);
+			int at = msgid.IndexOf ('@');
+			var idn = msgid.Substring (at + 1);
+
+			Assert.AreEqual ("xn--mjlnir-xxa", idn);
 		}
 	}
 }

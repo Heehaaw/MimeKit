@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ namespace MimeKit.IO {
 		bool flushed;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.IO.FilteredStream"/> class.
+		/// Initialize a new instance of the <see cref="FilteredStream"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a filtered stream using the specified source stream.

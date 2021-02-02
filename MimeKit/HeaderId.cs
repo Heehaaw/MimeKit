@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -628,6 +628,12 @@ namespace MimeKit {
 		/// The Supersedes header field.
 		/// </summary>
 		Supersedes,
+
+		/// <summary>
+		/// The TLS-Required header field.
+		/// </summary>
+		[HeaderName ("TLS-Required")]
+		TLSRequired,
 
 		/// <summary>
 		/// The To header field.

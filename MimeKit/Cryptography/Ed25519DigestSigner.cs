@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,10 +75,11 @@ namespace MimeKit.Cryptography {
 				throw new InvalidOperationException ("Ed25519DigestSigner not initialised for signature generation.");
 
 			var hash = new byte[digest.GetDigestSize ()];
+
 			digest.DoFinal (hash, 0);
 
 			var signature = new byte[Ed25519PrivateKeyParameters.SignatureSize];
-			privateKey.Sign (Ed25519.Algorithm.Ed25519, publicKey, null, hash, 0, hash.Length, signature, 0);
+			privateKey.Sign (Ed25519.Algorithm.Ed25519, null, hash, 0, hash.Length, signature, 0);
 
 			Reset ();
 
@@ -93,7 +94,8 @@ namespace MimeKit.Cryptography {
 			if (Ed25519.SignatureSize != signature.Length)
 				return false;
 
-			byte[] hash = new byte[digest.GetDigestSize ()];
+			var hash = new byte[digest.GetDigestSize ()];
+
 			digest.DoFinal (hash, 0);
 
 			var pk = publicKey.GetEncoded ();

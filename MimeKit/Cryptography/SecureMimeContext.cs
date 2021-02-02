@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,11 @@ using System.Threading;
 using Org.BouncyCastle.Cms;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.X509;
-using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.Smime;
 using Org.BouncyCastle.Asn1.Ntt;
 using Org.BouncyCastle.Asn1.Kisa;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.Smime;
 
 namespace MimeKit.Cryptography {
 	/// <summary>
@@ -54,7 +55,7 @@ namespace MimeKit.Cryptography {
 		internal static readonly DerObjectIdentifier Twofish = new DerObjectIdentifier ("1.3.6.1.4.1.25258.3.3");
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.SecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="SecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Enables the following encryption algorithms by default:</para>
@@ -431,7 +432,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Compresses the specified stream.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the compressed content.</returns>
 		/// <param name="stream">The stream to compress.</param>
 		/// <exception cref="System.ArgumentNullException">
@@ -508,7 +509,7 @@ namespace MimeKit.Cryptography {
 			content.ContentStream.CopyTo (output, 4096);
 		}
 
-		internal SmimeCapabilitiesAttribute GetSecureMimeCapabilitiesAttribute ()
+		internal SmimeCapabilitiesAttribute GetSecureMimeCapabilitiesAttribute (bool includeRsaesOaep)
 		{
 			var capabilities = new SmimeCapabilityVector ();
 
@@ -568,6 +569,13 @@ namespace MimeKit.Cryptography {
 				}
 			}
 
+			if (includeRsaesOaep) {
+				capabilities.AddCapability (PkcsObjectIdentifiers.IdRsaesOaep, RsaEncryptionPadding.OaepSha1.GetRsaesOaepParameters ());
+				capabilities.AddCapability (PkcsObjectIdentifiers.IdRsaesOaep, RsaEncryptionPadding.OaepSha256.GetRsaesOaepParameters ());
+				capabilities.AddCapability (PkcsObjectIdentifiers.IdRsaesOaep, RsaEncryptionPadding.OaepSha384.GetRsaesOaepParameters ());
+				capabilities.AddCapability (PkcsObjectIdentifiers.IdRsaesOaep, RsaEncryptionPadding.OaepSha512.GetRsaesOaepParameters ());
+			}
+
 			return new SmimeCapabilitiesAttribute (capabilities);
 		}
 
@@ -577,7 +585,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Cryptographically signs and encapsulates the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="content">The content.</param>
@@ -594,7 +602,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Cryptographically signs and encapsulates the content using the specified signer and digest algorithm.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="digestAlgo">The digest algorithm to use for signing.</param>
@@ -624,7 +632,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Cryptographically signs the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Signature"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Signature"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="content">The content.</param>
@@ -683,7 +691,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Encrypts the specified content for the specified recipients.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the encrypted content.</returns>
 		/// <param name="recipients">The recipients.</param>
 		/// <param name="content">The content.</param>
@@ -742,8 +750,7 @@ namespace MimeKit.Cryptography {
 		/// </exception>
 		/// <exception cref="System.ArgumentException">
 		/// <para><paramref name="fileName"/> is a zero-length string, contains only white space, or
-		/// contains one or more invalid characters as defined by
-		/// <see cref="System.IO.Path.InvalidPathChars"/>.</para>
+		/// contains one or more invalid characters.</para>
 		/// <para>-or-</para>
 		/// <para><paramref name="fileName"/> does not contain a private key.</para>
 		/// <para>-or-</para>

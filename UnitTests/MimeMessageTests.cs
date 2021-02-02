@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,16 +69,16 @@ namespace UnitTests {
 			Assert.Throws<ArgumentNullException> (() => MimeMessage.Load (null, "fileName"));
 			Assert.Throws<ArgumentNullException> (() => MimeMessage.Load (ParserOptions.Default, (string) null));
 
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((Stream) null));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((Stream) null, true));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, Stream.Null));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (Stream) null));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, Stream.Null, true));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (Stream) null, true));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((Stream) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((Stream) null, true));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, Stream.Null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (Stream) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, Stream.Null, true));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (Stream) null, true));
 
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((string) null));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, "fileName"));
-			Assert.Throws<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (string) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync ((string) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (null, "fileName"));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await MimeMessage.LoadAsync (ParserOptions.Default, (string) null));
 
 			Assert.Throws<ArgumentNullException> (() => message.Accept (null));
 			Assert.Throws<ArgumentOutOfRangeException> (() => message.Prepare (EncodingConstraint.None, 10));
@@ -89,19 +89,53 @@ namespace UnitTests {
 			Assert.Throws<ArgumentNullException> (() => message.WriteTo (FormatOptions.Default, (Stream) null));
 			Assert.Throws<ArgumentNullException> (() => message.WriteTo (null, "fileName"));
 			Assert.Throws<ArgumentNullException> (() => message.WriteTo (FormatOptions.Default, (string) null));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync ((string) null));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync ((Stream) null));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync (null, Stream.Null));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync ((Stream) null, true));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync (FormatOptions.Default, (Stream) null));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync (null, "fileName"));
-			Assert.Throws<ArgumentNullException> (async () => await message.WriteToAsync (FormatOptions.Default, (string) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync ((string) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync ((Stream) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync (null, Stream.Null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync ((Stream) null, true));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync (FormatOptions.Default, (Stream) null));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync (null, "fileName"));
+			Assert.ThrowsAsync<ArgumentNullException> (async () => await message.WriteToAsync (FormatOptions.Default, (string) null));
 			Assert.Throws<ArgumentNullException> (() => message.Sign (null));
 			Assert.Throws<ArgumentNullException> (() => message.Sign (null, DigestAlgorithm.Sha1));
 			Assert.Throws<ArgumentNullException> (() => message.Encrypt (null));
 			Assert.Throws<ArgumentNullException> (() => message.SignAndEncrypt (null));
 
 			Assert.Throws<ArgumentNullException> (() => MimeMessage.CreateFromMailMessage (null));
+		}
+
+		[Test]
+		public void TestPrependHeader ()
+		{
+			string rawMessageText = @"Date: Fri, 22 Jan 2016 8:44:05 -0500 (EST)
+From: MimeKit Unit Tests <unit.tests@mimekit.org>
+To: MimeKit Unit Tests <unit.tests@mimekit.org>
+Subject: This is a test off prepending headers.
+Message-Id: <id@localhost.com>
+MIME-Version: 1.0
+Content-Type: text/plain
+
+This is the message body.
+".Replace ("\r\n", "\n");
+			string expected = "X-Prepended: This is the prepended header\n" + rawMessageText;
+
+			using (var source = new MemoryStream (Encoding.UTF8.GetBytes (rawMessageText))) {
+				var parser = new MimeParser (source, MimeFormat.Default);
+				var message = parser.ParseMessage ();
+
+				message.Headers.Insert (0, new Header ("X-Prepended", "This is the prepended header"));
+
+				using (var serialized = new MemoryStream ()) {
+					var options = FormatOptions.Default.Clone ();
+					options.NewLineFormat = NewLineFormat.Unix;
+
+					message.WriteTo (options, serialized);
+
+					var result = Encoding.UTF8.GetString (serialized.ToArray ());
+
+					Assert.AreEqual (expected, result, "Reserialized message is not identical to the original.");
+				}
+			}
 		}
 
 		[Test]
@@ -1245,39 +1279,39 @@ unsubscribe
 			const string TextBody = "This is the text body.";
 			MimeMessage message;
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.1.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.1.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.1.txt.");
 			Assert.AreEqual (null, message.HtmlBody, "The HTML bodies do not match for body.1.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.2.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.2.txt"));
 			Assert.AreEqual (null, message.TextBody, "The text bodies do not match for body.2.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.2.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.3.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.3.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.3.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.3.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.4.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.4.txt"));
 			Assert.AreEqual (null, message.TextBody, "The text bodies do not match for body.4.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.4.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.5.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.5.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.5.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.5.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.6.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.6.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.6.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.6.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.7.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.7.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.7.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.7.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.8.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.8.txt"));
 			Assert.AreEqual (TextBody, message.TextBody, "The text bodies do not match for body.8.txt.");
 			Assert.AreEqual (null, message.HtmlBody, "The HTML bodies do not match for body.8.txt.");
 
-			message = MimeMessage.Load (Path.Combine ("..", "..", "TestData", "messages", "body.9.txt"));
+			message = MimeMessage.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "body.9.txt"));
 			Assert.AreEqual (null, message.TextBody, "The text bodies do not match for body.9.txt.");
 			Assert.AreEqual (HtmlBody, message.HtmlBody, "The HTML bodies do not match for body.9.txt.");
 		}

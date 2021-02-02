@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ namespace MimeKit.Cryptography {
 	public class CmsRecipient
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.CmsRecipient"/> class.
+		/// Initialize a new instance of the <see cref="CmsRecipient"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Creates a new <see cref="CmsRecipient"/> based on the provided certificate.</para>
@@ -74,7 +74,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.CmsRecipient"/> class.
+		/// Initialize a new instance of the <see cref="CmsRecipient"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Creates a new <see cref="CmsRecipient"/>, loading the certificate from the specified stream.</para>
@@ -116,7 +116,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.CmsRecipient"/> class.
+		/// Initialize a new instance of the <see cref="CmsRecipient"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Creates a new <see cref="CmsRecipient"/>, loading the certificate from the specified file.</para>
@@ -133,8 +133,7 @@ namespace MimeKit.Cryptography {
 		/// </exception>
 		/// <exception cref="System.ArgumentException">
 		/// <paramref name="fileName"/> is a zero-length string, contains only white space, or
-		/// contains one or more invalid characters as defined by
-		/// <see cref="System.IO.Path.InvalidPathChars"/>.
+		/// contains one or more invalid characters.
 		/// </exception>
 		/// <exception cref="System.IO.DirectoryNotFoundException">
 		/// <paramref name="fileName"/> is an invalid file path.
@@ -175,7 +174,7 @@ namespace MimeKit.Cryptography {
 
 #if !NETSTANDARD1_3 && !NETSTANDARD1_6
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.CmsRecipient"/> class.
+		/// Initialize a new instance of the <see cref="CmsRecipient"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Creates a new <see cref="CmsRecipient"/> based on the provided certificate.</para>
@@ -239,6 +238,18 @@ namespace MimeKit.Cryptography {
 		/// </remarks>
 		/// <value>The encryption algorithms.</value>
 		public EncryptionAlgorithm[] EncryptionAlgorithms {
+			get; set;
+		}
+
+		/// <summary>
+		/// Get or set the RSA key encryption padding.
+		/// </summary>
+		/// <remarks>
+		/// <para>Gets or sets the padding to use for key encryption when
+		/// the <see cref="Certificate"/>'s public key is an RSA key.</para>
+		/// </remarks>
+		/// <value>The encryption padding scheme.</value>
+		public RsaEncryptionPadding RsaEncryptionPadding {
 			get; set;
 		}
 	}

@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Globalization;
 
 namespace MimeKit.Tnef {
 	/// <summary>
@@ -161,7 +162,7 @@ namespace MimeKit.Tnef {
 				} catch (Exception ex) {
 					ComplianceStatus |= TnefComplianceStatus.InvalidMessageCodepage;
 					if (ComplianceMode == TnefComplianceMode.Strict)
-						throw new TnefException (TnefComplianceStatus.InvalidMessageCodepage, string.Format ("Invalid message codepage: {0}", value), ex);
+						throw new TnefException (TnefComplianceStatus.InvalidMessageCodepage, string.Format (CultureInfo.InvariantCulture, "Invalid message codepage: {0}", value), ex);
 					codepage = 1252;
 				}
 			}
@@ -202,7 +203,7 @@ namespace MimeKit.Tnef {
 				if (value != 0x00010000) {
 					ComplianceStatus |= TnefComplianceStatus.InvalidTnefVersion;
 					if (ComplianceMode == TnefComplianceMode.Strict)
-						throw new TnefException (TnefComplianceStatus.InvalidTnefVersion, string.Format ("Invalid TNEF version: {0}", value));
+						throw new TnefException (TnefComplianceStatus.InvalidTnefVersion, string.Format (CultureInfo.InvariantCulture, "Invalid TNEF version: {0}", value));
 				}
 
 				version = value;
@@ -210,7 +211,7 @@ namespace MimeKit.Tnef {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Tnef.TnefReader"/> class.
+		/// Initialize a new instance of the <see cref="TnefReader"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>When reading a TNEF stream using the <see cref="TnefComplianceMode.Strict"/> mode,
@@ -259,7 +260,7 @@ namespace MimeKit.Tnef {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Tnef.TnefReader"/> class.
+		/// Initialize a new instance of the <see cref="TnefReader"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="TnefReader"/> for the specified input stream.
@@ -274,11 +275,11 @@ namespace MimeKit.Tnef {
 
 		/// <summary>
 		/// Releases unmanaged resources and performs other cleanup operations before the
-		/// <see cref="MimeKit.Tnef.TnefReader"/> is reclaimed by garbage collection.
+		/// <see cref="TnefReader"/> is reclaimed by garbage collection.
 		/// </summary>
 		/// <remarks>
 		/// Releases unmanaged resources and performs other cleanup operations before the
-		/// <see cref="MimeKit.Tnef.TnefReader"/> is reclaimed by garbage collection.
+		/// <see cref="TnefReader"/> is reclaimed by garbage collection.
 		/// </remarks>
 		~TnefReader ()
 		{
@@ -740,12 +741,12 @@ namespace MimeKit.Tnef {
 		}
 
 		/// <summary>
-		/// Releases all resource used by the <see cref="MimeKit.Tnef.TnefReader"/> object.
+		/// Releases all resource used by the <see cref="TnefReader"/> object.
 		/// </summary>
-		/// <remarks>Call <see cref="Dispose()"/> when you are finished using the <see cref="MimeKit.Tnef.TnefReader"/>. The
-		/// <see cref="Dispose()"/> method leaves the <see cref="MimeKit.Tnef.TnefReader"/> in an unusable state. After calling
-		/// <see cref="Dispose()"/>, you must release all references to the <see cref="MimeKit.Tnef.TnefReader"/> so the garbage
-		/// collector can reclaim the memory that the <see cref="MimeKit.Tnef.TnefReader"/> was occupying.</remarks>
+		/// <remarks>Call <see cref="Dispose()"/> when you are finished using the <see cref="TnefReader"/>. The
+		/// <see cref="Dispose()"/> method leaves the <see cref="TnefReader"/> in an unusable state. After calling
+		/// <see cref="Dispose()"/>, you must release all references to the <see cref="TnefReader"/> so the garbage
+		/// collector can reclaim the memory that the <see cref="TnefReader"/> was occupying.</remarks>
 		public void Dispose ()
 		{
 			Dispose (true);

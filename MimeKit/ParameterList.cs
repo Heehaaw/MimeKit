@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections;
+using System.Globalization;
 using System.Collections.Generic;
 
 using MimeKit.Encodings;
@@ -46,7 +47,7 @@ namespace MimeKit {
 		readonly List<Parameter> parameters;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.ParameterList"/> class.
+		/// Initialize a new instance of the <see cref="ParameterList"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new parameter list.
@@ -58,7 +59,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Adds a parameter with the specified name and value.
+		/// Add a parameter with the specified name and value.
 		/// </summary>
 		/// <remarks>
 		/// Adds a new parameter to the list with the specified name and value.
@@ -79,7 +80,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Adds a parameter with the specified name and value.
+		/// Add a parameter with the specified name and value.
 		/// </summary>
 		/// <remarks>
 		/// Adds a new parameter to the list with the specified name and value.
@@ -103,7 +104,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Adds a parameter with the specified name and value.
+		/// Add a parameter with the specified name and value.
 		/// </summary>
 		/// <remarks>
 		/// Adds a new parameter to the list with the specified name and value.
@@ -132,7 +133,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Checks if the <see cref="MimeKit.ParameterList"/> contains a parameter with the specified name.
+		/// Check if the <see cref="ParameterList"/> contains a parameter with the specified name.
 		/// </summary>
 		/// <remarks>
 		/// Determines whether or not the parameter list contains a parameter with the specified name.
@@ -152,7 +153,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets the index of the requested parameter, if it exists.
+		/// Get the index of the requested parameter, if it exists.
 		/// </summary>
 		/// <remarks>
 		/// Finds the index of the parameter with the specified name, if it exists.
@@ -176,7 +177,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Inserts a parameter with the specified name and value at the given index.
+		/// Insert a parameter with the specified name and value at the given index.
 		/// </summary>
 		/// <remarks>
 		/// Inserts a new parameter with the given name and value at the specified index.
@@ -204,7 +205,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Removes the specified parameter.
+		/// Remove the specified parameter.
 		/// </summary>
 		/// <remarks>
 		/// Removes the parameter with the specified name from the list, if it exists.
@@ -228,7 +229,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets or sets the value of a parameter with the specified name.
+		/// Get or set the value of a parameter with the specified name.
 		/// </summary>
 		/// <remarks>
 		/// Gets or sets the value of a parameter with the specified name.
@@ -271,11 +272,14 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets the parameter with the specified name.
+		/// Get the parameter with the specified name.
 		/// </summary>
 		/// <remarks>
 		/// Gets the parameter with the specified name.
 		/// </remarks>
+		/// <example>
+		/// <code language="c#" source="Examples\ParameterExamples.cs" region="OverrideFileNameParameterEncoding"/>
+		/// </example>
 		/// <returns><c>true</c> if the parameter exists; otherwise, <c>false</c>.</returns>
 		/// <param name="name">The parameter name.</param>
 		/// <param name="param">The parameter.</param>
@@ -291,7 +295,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets the value of the parameter with the specified name.
+		/// Get the value of the parameter with the specified name.
 		/// </summary>
 		/// <remarks>
 		/// Gets the value of the parameter with the specified name.
@@ -322,7 +326,7 @@ namespace MimeKit {
 		#region ICollection implementation
 
 		/// <summary>
-		/// Gets the number of parameters in the <see cref="MimeKit.ParameterList"/>.
+		/// Get the number of parameters in the <see cref="ParameterList"/>.
 		/// </summary>
 		/// <remarks>
 		/// Indicates the number of parameters in the list.
@@ -333,7 +337,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this instance is read only.
+		/// Get a value indicating whether this instance is read only.
 		/// </summary>
 		/// <remarks>
 		/// A <see cref="ParameterList"/> is never read-only.
@@ -344,7 +348,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Adds the specified parameter.
+		/// Add a <see cref="Parameter"/> to a <see cref="ParameterList"/>.
 		/// </summary>
 		/// <remarks>
 		/// Adds the specified parameter to the end of the list.
@@ -373,7 +377,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Clears the parameter list.
+		/// Clear the parameter list.
 		/// </summary>
 		/// <remarks>
 		/// Removes all of the parameters from the list.
@@ -390,7 +394,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Checks if the <see cref="MimeKit.ParameterList"/> contains the specified parameter.
+		/// Check if the <see cref="ParameterList"/> contains the specified parameter.
 		/// </summary>
 		/// <remarks>
 		/// Determines whether or not the parameter list contains the specified parameter.
@@ -410,7 +414,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Copies all of the contained parameters to the specified array.
+		/// Copy all of the parameters in the list to the specified array.
 		/// </summary>
 		/// <remarks>
 		/// Copies all of the parameters within the <see cref="ParameterList"/> into the array,
@@ -424,7 +428,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Removes the specified parameter.
+		/// Remove a <see cref="Parameter"/> from a <see cref="ParameterList"/>.
 		/// </summary>
 		/// <remarks>
 		/// Removes the specified parameter from the list.
@@ -456,7 +460,7 @@ namespace MimeKit {
 		#region IList implementation
 
 		/// <summary>
-		/// Gets the index of the requested parameter, if it exists.
+		/// Ges the index of the requested parameter, if it exists.
 		/// </summary>
 		/// <remarks>
 		/// Finds the index of the specified parameter, if it exists.
@@ -475,7 +479,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Inserts the specified parameter at the given index.
+		/// Insert a <see cref="Parameter"/> at the specified index.
 		/// </summary>
 		/// <remarks>
 		/// Inserts the parameter at the specified index in the list.
@@ -511,7 +515,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Removes the parameter at the specified index.
+		/// Remove the parameter at the specified index.
 		/// </summary>
 		/// <remarks>
 		/// Removes the parameter at the specified index.
@@ -535,10 +539,10 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Gets or sets the <see cref="MimeKit.Parameter"/> at the specified index.
+		/// Get or set the <see cref="Parameter"/> at the specified index.
 		/// </summary>
 		/// <remarks>
-		/// Gets or sets the <see cref="MimeKit.Parameter"/> at the specified index.
+		/// Gets or sets the <see cref="Parameter"/> at the specified index.
 		/// </remarks>
 		/// <value>The parameter at the specified index.</value>
 		/// <param name="index">The index.</param>
@@ -592,7 +596,7 @@ namespace MimeKit {
 		#region IEnumerable implementation
 
 		/// <summary>
-		/// Gets an enumerator for the list of parameters.
+		/// Get an enumerator for the list of parameters.
 		/// </summary>
 		/// <remarks>
 		/// Gets an enumerator for the list of parameters.
@@ -608,7 +612,7 @@ namespace MimeKit {
 		#region IEnumerable implementation
 
 		/// <summary>
-		/// Gets an enumerator for the list of parameters.
+		/// Get an enumerator for the list of parameters.
 		/// </summary>
 		/// <remarks>
 		/// Gets an enumerator for the list of parameters.
@@ -628,7 +632,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Returns a string representation of the parameters in the <see cref="ParameterList"/>.
+		/// Serialize a <see cref="ParameterList"/> to a string.
 		/// </summary>
 		/// <remarks>
 		/// If there are multiple parameters in the list, they will be separated by a semicolon.
@@ -708,7 +712,7 @@ namespace MimeKit {
 			startIndex = index;
 			if (!SkipParamName (text, ref index, endIndex)) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Invalid parameter name token at offset {0}", startIndex), startIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid parameter name token at offset {0}", startIndex), startIndex, index);
 
 				return false;
 			}
@@ -720,7 +724,7 @@ namespace MimeKit {
 
 			if (index >= endIndex) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 				return false;
 			}
@@ -734,7 +738,7 @@ namespace MimeKit {
 
 				if (index >= endIndex) {
 					if (throwOnError)
-						throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+						throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 					return false;
 				}
@@ -746,7 +750,7 @@ namespace MimeKit {
 
 					if (index >= endIndex) {
 						if (throwOnError)
-							throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 						return false;
 					}
@@ -760,7 +764,7 @@ namespace MimeKit {
 
 						if (index >= endIndex) {
 							if (throwOnError)
-								throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+								throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 							return false;
 						}
@@ -774,7 +778,7 @@ namespace MimeKit {
 
 			if (text[index] != (byte) '=') {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 				return false;
 			}
@@ -786,7 +790,7 @@ namespace MimeKit {
 
 			if (index >= endIndex) {
 				if (throwOnError)
-					throw new ParseException (string.Format ("Incomplete parameter at offset {0}", startIndex), startIndex, index);
+					throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Incomplete parameter at offset {0}", startIndex), startIndex, index);
 
 				return false;
 			}
@@ -969,13 +973,16 @@ namespace MimeKit {
 					break;
 
 				if (text[index] != (byte) ';') {
-					if (throwOnError)
-						throw new ParseException (string.Format ("Invalid parameter list token at offset {0}", index), index, index);
+					if (options.ParameterComplianceMode == RfcComplianceMode.Strict) {
+						if (throwOnError)
+							throw new ParseException (string.Format (CultureInfo.InvariantCulture, "Invalid parameter list token at offset {0}", index), index, index);
 
-					return false;
+						return false;
+					}
+				} else {
+					// Skip over ';'
+					index++;
 				}
-
-				index++;
 			} while (true);
 
 			paramList = new ParameterList ();

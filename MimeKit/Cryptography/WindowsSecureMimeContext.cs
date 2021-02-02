@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,7 @@ namespace MimeKit.Cryptography {
 		const X509KeyStorageFlags DefaultKeyStorageFlags = X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.WindowsSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="WindowsSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="WindowsSecureMimeContext"/>.
@@ -90,7 +90,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.WindowsSecureMimeContext"/> class.
+		/// Initialize a new instance of the <see cref="WindowsSecureMimeContext"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Constructs an S/MIME context using the current user's X.509 store location.
@@ -260,13 +260,28 @@ namespace MimeKit.Cryptography {
 			foreach (var recipient in recipients) {
 				var certificate = new X509Certificate2 (recipient.Certificate.GetEncoded ());
 				RealSubjectIdentifierType type;
+				RealCmsRecipient real;
 
 				if (recipient.RecipientIdentifierType != SubjectIdentifierType.SubjectKeyIdentifier)
 					type = RealSubjectIdentifierType.IssuerAndSerialNumber;
 				else
 					type = RealSubjectIdentifierType.SubjectKeyIdentifier;
 
-				collection.Add (new RealCmsRecipient (type, certificate));
+#if NETCOREAPP3_0
+				var padding = recipient.RsaEncryptionPadding?.AsRSAEncryptionPadding ();
+
+				if (padding != null)
+					real = new RealCmsRecipient (type, certificate, padding);
+				else
+					real = new RealCmsRecipient (type, certificate);
+#else
+				if (recipient.RsaEncryptionPadding?.Scheme == RsaEncryptionPaddingScheme.Oaep)
+					throw new NotSupportedException ("The RSAES-OAEP encryption padding scheme is not supported by the WindowsSecureMimeContext. You must use a subclass of BouncyCastleSecureMimeContext to get this feature.");
+
+				real = new RealCmsRecipient (type, certificate);
+#endif
+
+				collection.Add (real);
 			}
 
 			return collection;
@@ -324,14 +339,14 @@ namespace MimeKit.Cryptography {
 
 		AsnEncodedData GetSecureMimeCapabilities ()
 		{
-			var attr = GetSecureMimeCapabilitiesAttribute ();
+			var attr = GetSecureMimeCapabilitiesAttribute (false);
 
 			return new AsnEncodedData (attr.AttrType.Id, attr.AttrValues[0].GetEncoded ());
 		}
 
-		RealCmsSigner GetRealCmsSigner (X509Certificate2 certificate, DigestAlgorithm digestAlgo)
+		RealCmsSigner GetRealCmsSigner (RealSubjectIdentifierType type, X509Certificate2 certificate, DigestAlgorithm digestAlgo)
 		{
-			var signer = new RealCmsSigner (certificate);
+			var signer = new RealCmsSigner (type, certificate);
 			signer.DigestAlgorithm = new Oid (GetDigestOid (digestAlgo));
 			signer.SignedAttributes.Add (GetSecureMimeCapabilities ());
 			signer.SignedAttributes.Add (new Pkcs9SigningTime ());
@@ -341,11 +356,20 @@ namespace MimeKit.Cryptography {
 
 		RealCmsSigner GetRealCmsSigner (CmsSigner signer)
 		{
+			if (signer.RsaSignaturePadding == RsaSignaturePadding.Pss)
+				throw new NotSupportedException ("The RSASSA-PSS signature padding scheme is not supported by the WindowsSecureMimeContext. You must use a subclass of BouncyCastleSecureMimeContext to get this feature.");
+
 			var certificate = signer.Certificate.AsX509Certificate2 ();
+			RealSubjectIdentifierType type;
+
+			if (signer.SignerIdentifierType != SubjectIdentifierType.SubjectKeyIdentifier)
+				type = RealSubjectIdentifierType.IssuerAndSerialNumber;
+			else
+				type = RealSubjectIdentifierType.SubjectKeyIdentifier;
 
 			certificate.PrivateKey = signer.PrivateKey.AsAsymmetricAlgorithm ();
 
-			return GetRealCmsSigner (certificate, signer.DigestAlgorithm);
+			return GetRealCmsSigner (type, certificate, signer.DigestAlgorithm);
 		}
 
 		/// <summary>
@@ -371,7 +395,7 @@ namespace MimeKit.Cryptography {
 			if ((certificate = GetSignerCertificate (mailbox)) == null)
 				throw new CertificateNotFoundException (mailbox, "A valid signing certificate could not be found.");
 
-			return GetRealCmsSigner (certificate, digestAlgo);
+			return GetRealCmsSigner (RealSubjectIdentifierType.IssuerAndSerialNumber, certificate, digestAlgo);
 		}
 
 		/// <summary>
@@ -442,7 +466,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Cryptographically signs and encapsulates the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="content">The content.</param>
@@ -473,7 +497,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Sign and encapsulate the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="digestAlgo">The digest algorithm to use for signing.</param>
@@ -514,7 +538,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Cryptographically signs the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Signature"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Signature"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="content">The content.</param>
@@ -545,7 +569,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Sign the content using the specified signer.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.MimePart"/> instance
+		/// <returns>A new <see cref="MimePart"/> instance
 		/// containing the detached signature data.</returns>
 		/// <param name="signer">The signer.</param>
 		/// <param name="digestAlgo">The digest algorithm to use for signing.</param>
@@ -886,7 +910,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Encrypts the specified content for the specified recipients.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance
 		/// containing the encrypted content.</returns>
 		/// <param name="recipients">The recipients.</param>
 		/// <param name="content">The content.</param>
@@ -915,7 +939,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Encrypts the specified content for the specified recipients.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.MimePart"/> instance
+		/// <returns>A new <see cref="MimePart"/> instance
 		/// containing the encrypted data.</returns>
 		/// <param name="recipients">The recipients.</param>
 		/// <param name="content">The content.</param>
@@ -952,7 +976,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Decrypt the encrypted data.
 		/// </remarks>
-		/// <returns>The decrypted <see cref="MimeKit.MimeEntity"/>.</returns>
+		/// <returns>The decrypted <see cref="MimeEntity"/>.</returns>
 		/// <param name="encryptedData">The encrypted data.</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <exception cref="System.ArgumentNullException">
@@ -970,9 +994,22 @@ namespace MimeKit.Cryptography {
 				throw new ArgumentNullException (nameof (encryptedData));
 
 			var enveloped = new EnvelopedCms ();
+			CryptographicException ce = null;
 
 			enveloped.Decode (ReadAllBytes (encryptedData));
-			enveloped.Decrypt ();
+
+			foreach (var recipient in enveloped.RecipientInfos) {
+				try {
+					enveloped.Decrypt (recipient);
+					ce = null;
+					break;
+				} catch (CryptographicException ex) {
+					ce = ex;
+				}
+			}
+
+			if (ce != null)
+				throw ce;
 
 			var decryptedData = enveloped.Encode ();
 
@@ -1102,7 +1139,12 @@ namespace MimeKit.Cryptography {
 			if (crl == null)
 				throw new ArgumentNullException (nameof (crl));
 
-			foreach (Org.BouncyCastle.X509.X509Certificate certificate in crl.GetRevokedCertificates ())
+			var revoked = crl.GetRevokedCertificates ();
+
+			if (revoked == null)
+				return;
+
+			foreach (Org.BouncyCastle.X509.X509Certificate certificate in revoked)
 				Import (StoreName.Disallowed, certificate);
 		}
 
@@ -1162,7 +1204,7 @@ namespace MimeKit.Cryptography {
 		/// <remarks>
 		/// Exports the certificates for the specified mailboxes.
 		/// </remarks>
-		/// <returns>A new <see cref="MimeKit.Cryptography.ApplicationPkcs7Mime"/> instance containing
+		/// <returns>A new <see cref="ApplicationPkcs7Mime"/> instance containing
 		/// the exported keys.</returns>
 		/// <param name="mailboxes">The mailboxes.</param>
 		/// <exception cref="System.ArgumentNullException">

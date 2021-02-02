@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ namespace MimeKit.IO.Filters {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.IO.Filters.CharsetFilter"/> class.
+		/// Initialize a new instance of the <see cref="CharsetFilter"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="CharsetFilter"/> to convert text from the specified
@@ -77,7 +77,7 @@ namespace MimeKit.IO.Filters {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.IO.Filters.CharsetFilter"/> class.
+		/// Initialize a new instance of the <see cref="CharsetFilter"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="CharsetFilter"/> to convert text from the specified
@@ -101,7 +101,7 @@ namespace MimeKit.IO.Filters {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.IO.Filters.CharsetFilter"/> class.
+		/// Initialize a new instance of the <see cref="CharsetFilter"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="CharsetFilter"/> to convert text from the specified

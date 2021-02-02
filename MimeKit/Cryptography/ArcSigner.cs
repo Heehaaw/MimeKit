@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ namespace MimeKit.Cryptography {
 		static readonly string[] ArcShouldNotInclude = { "return-path", "received", "comments", "keywords", "bcc", "resent-bcc", "arc-seal" };
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="T:MimeKit.Cryptography.ArcSigner"/> class.
+		/// Initialize a new instance of the <see cref="ArcSigner"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="ArcSigner"/>.
@@ -71,7 +71,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.ArcSigner"/> class.
+		/// Initialize a new instance of the <see cref="ArcSigner"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="ArcSigner"/>.
@@ -102,7 +102,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.ArcSigner"/> class.
+		/// Initialize a new instance of the <see cref="ArcSigner"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="ArcSigner"/>.
@@ -123,8 +123,7 @@ namespace MimeKit.Cryptography {
 		/// </exception>
 		/// <exception cref="System.ArgumentException">
 		/// <paramref name="fileName"/> is a zero-length string, contains only white space, or
-		/// contains one or more invalid characters as defined by
-		/// <see cref="System.IO.Path.InvalidPathChars"/>.
+		/// contains one or more invalid characters.
 		/// </exception>
 		/// <exception cref="System.FormatException">
 		/// The file did not contain a private key.
@@ -154,7 +153,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.Cryptography.ArcSigner"/> class.
+		/// Initialize a new instance of the <see cref="ArcSigner"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="ArcSigner"/>.
@@ -344,18 +343,14 @@ namespace MimeKit.Cryptography {
 
 		async Task ArcSignAsync (FormatOptions options, MimeMessage message, IList<string> headers, bool doAsync, CancellationToken cancellationToken)
 		{
-			ArcVerifier.GetArcHeaderSets (message, true, out ArcHeaderSet[] sets, out int count);
+			ArcVerifier.GetArcHeaderSets (message, true, out ArcHeaderSet[] sets, out int count, out var errors);
 			AuthenticationResults authres;
 			int instance = count + 1;
 			string cv;
 
-			if (count > 0) {
-				var parameters = sets[count - 1].ArcSealParameters;
-
-				// do not sign if there is already a failed ARC-Seal.
-				if (!parameters.TryGetValue ("cv", out cv) || cv.Equals ("fail", StringComparison.OrdinalIgnoreCase))
-					return;
-			}
+			// do not sign if there is already a failed/invalid ARC-Seal.
+			if (count > 0 && (errors & ArcValidationErrors.InvalidArcSealChainValidationValue) != 0)
+				return;
 
 			options = options.Clone ();
 			options.NewLineFormat = NewLineFormat.Dos;

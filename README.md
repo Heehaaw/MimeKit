@@ -86,25 +86,29 @@ How does your MIME parser compare?
 
 ## License Information
 
-MimeKit is Copyright (C) 2012-2018 Xamarin Inc. and is licensed under the MIT license:
+```
+MIT License
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
+Copyright (C) 2012-2020 .NET Foundation and Contributors
 
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
 
 ## Installing via NuGet
 
@@ -149,15 +153,16 @@ directory and select **Git Sync...** in the menu. Once you do that, you'll need 
 
 In the top-level MimeKit directory, there are a number of solution files; they are:
 
-* **MimeKit.sln** - includes projects for .NET 4.5, .NETStandard, Xamarin.Android, and Xamarin.iOS
-  as well as the unit tests.
-* **MimeKit.Mobile.sln** - includes only the Xamarin.Android and Xamarin.iOS projects.
-* **MimeKit.Net45.sln** - includes only the .NET 4.5 project and the unit tests.
-
-If you don't have the Xamarin products, you'll probably want to open the MimeKit.Net45.sln instead of MimeKit.sln.
+* **MimeKit.sln** - includes projects for .NET 4.5/4.6/4.7/4.8, .NETStandard 1.3/1.6/2.0 as well as the unit tests.
+* **MimeKitLite.sln** - includes projects for the stripped-down versions of MimeKit that drop support for crypto.
 
 Once you've opened the appropriate MimeKit solution file in [Visual Studio](https://www.visualstudio.com/downloads/),
 you can choose the **Debug** or **Release** build configuration and then build.
+
+Both Visual Studio 2017 and Visual Studio 2019 should be able to build MimeKit without any issues, but older versions such as
+Visual Studio 2015 will require modifications to the projects in order to build correctly. It has been reported that adding
+NuGet package references to [Microsoft.Net.Compilers](https://www.nuget.org/packages/Microsoft.Net.Compilers/) >= 3.6.0
+and [System.ValueTuple](https://www.nuget.org/packages/System.ValueTuple/) >= 4.5.0 will allow MimeKit to build successfully.
 
 Note: The **Release** build will generate the xml API documentation, but the **Debug** build will not.
 
@@ -1210,13 +1215,29 @@ tracker and look for something that might pique your interest!
 
 ## Reporting Bugs
 
-Have a bug or a feature request? [Please open a new issue](https://github.com/jstedfast/MimeKit/issues).
+Have a bug or a feature request? Please open a new
+[bug report](https://github.com/jstedfast/MimeKit/issues/new?template=bug_report.md)
+or
+[feature request](https://github.com/jstedfast/MimeKit/issues/new?template=feature_request.md).
 
-Before opening a new issue, please search for existing issues to avoid submitting duplicates.
+Before opening a new issue, please search through any [existing issues](https://github.com/jstedfast/MimeKit/issues)
+to avoid submitting duplicates. It may also be worth checking the
+[FAQ](https://github.com/jstedfast/MimeKit/blob/master/FAQ.md) for common questions that other developers
+have had.
+
+If you are getting an exception from somewhere within MimeKit, don't just provide the `Exception.Message`
+string. Please include the `Exception.StackTrace` as well. The `Message`, by itself, is often useless.
 
 ## Documentation
 
 API documentation can be found at [http://www.mimekit.net/docs](http://www.mimekit.net/docs).
 
-A copy of the xml formatted API documentation is also included in the NuGet and/or
-Xamarin Component package.
+A copy of the XML-formatted API reference documentation is also included in the NuGet package.
+
+## .NET Foundation
+
+MimeKit is a [.NET Foundation](https://www.dotnetfoundation.org/projects) project.
+
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. For more information, see the [.NET Foundation Code of Conduct](http://www.dotnetfoundation.org/code-of-conduct).
+
+General .NET OSS discussions: [.NET Foundation forums](https://forums.dotnetfoundation.org)

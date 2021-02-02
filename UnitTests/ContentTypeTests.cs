@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -252,6 +252,17 @@ namespace UnitTests {
 			AssertParse (text, expected);
 		}
 
+		// Tests the work-around for issue #595
+		[Test]
+		public void TestContentTypeWithoutSemicolonBetweenParameters ()
+		{
+			const string text = "application/x-pkcs7-mime;\n name=\"smime.p7m\"\n smime-type=enveloped-data";
+			var expected = new ContentType ("application", "x-pkcs7-mime") { Name = "smime.p7m" };
+			expected.Parameters.Add ("smime-type", "enveloped-data");
+
+			AssertParse (text, expected, true);
+		}
+
 		[Test]
 		public void TestContentTypeAndContentTrafserEncodingOnOneLine ()
 		{
@@ -260,7 +271,7 @@ namespace UnitTests {
 
 			// TryParse should "fail", but still produce a usable ContentType.
 			// Parse will throw ParseException.
-			AssertParse (text, expected, false, 35, 35);
+			AssertParse (text, expected, false, 35, 60);
 		}
 
 		[Test]

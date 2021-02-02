@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ namespace MimeKit.Cryptography {
 	public class SecureMailboxAddress : MailboxAddress
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="SecureMailboxAddress"/> with the specified fingerprint.
@@ -71,7 +71,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="SecureMailboxAddress"/> with the specified fingerprint.
@@ -95,7 +95,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="SecureMailboxAddress"/> with the specified fingerprint.
@@ -110,6 +110,7 @@ namespace MimeKit.Cryptography {
 		/// <para>-or-</para>
 		/// <para><paramref name="fingerprint"/> is <c>null</c>.</para>
 		/// </exception>
+		[Obsolete ("Use new SecureMailboxAddress (string.Empty, route, address, fingerprint) instead.")]
 		public SecureMailboxAddress (IEnumerable<string> route, string address, string fingerprint) : base (route, address)
 		{
 			ValidateFingerprint (fingerprint);
@@ -118,7 +119,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="SecureMailboxAddress"/> with the specified fingerprint.
@@ -142,7 +143,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="SecureMailboxAddress"/> with the specified fingerprint.
@@ -163,7 +164,7 @@ namespace MimeKit.Cryptography {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="SecureMailboxAddress"/> class.
+		/// Initialize a new instance of the <see cref="SecureMailboxAddress"/> class.
 		/// </summary>
 		/// <remarks>
 		/// <para>Creates a new <see cref="MailboxAddress"/> with the specified address.</para>
@@ -182,6 +183,7 @@ namespace MimeKit.Cryptography {
 		/// <para>-or-</para>
 		/// <para><paramref name="fingerprint"/> is <c>null</c>.</para>
 		/// </exception>
+		[Obsolete ("Use new SecureMailboxAddress (string.Empty, address, fingerprint) instead.")]
 		public SecureMailboxAddress (string address, string fingerprint) : base (address)
 		{
 			ValidateFingerprint (fingerprint);
@@ -208,7 +210,7 @@ namespace MimeKit.Cryptography {
 		/// as a unique identifier for a particular certificate in a certificate store.
 		/// </remarks>
 		/// <seealso cref="System.Security.Cryptography.X509Certificates.X509Certificate2.Thumbprint"/>
-		/// <seealso cref="MimeKit.Cryptography.BouncyCastleCertificateExtensions"/>
+		/// <seealso cref="BouncyCastleCertificateExtensions"/>
 		/// <value>The fingerprint of the certificate.</value>
 		public string Fingerprint {
 			get; private set;

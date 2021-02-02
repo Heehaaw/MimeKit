@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,10 +44,10 @@ namespace MimeKit {
 	public class MultipartRelated : Multipart
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.MultipartRelated"/> class.
+		/// Initialize a new instance of the <see cref="MultipartRelated"/> class.
 		/// </summary>
 		/// <remarks>
-		/// This constructor is used by <see cref="MimeKit.MimeParser"/>.
+		/// This constructor is used by <see cref="MimeParser"/>.
 		/// </remarks>
 		/// <param name="args">Information used by the constructor.</param>
 		/// <exception cref="System.ArgumentNullException">
@@ -58,7 +58,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.MultipartRelated"/> class.
+		/// Initialize a new instance of the <see cref="MultipartRelated"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="MultipartRelated"/> part.
@@ -75,7 +75,7 @@ namespace MimeKit {
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="MimeKit.MultipartRelated"/> class.
+		/// Initialize a new instance of the <see cref="MultipartRelated"/> class.
 		/// </summary>
 		/// <remarks>
 		/// Creates a new <see cref="MultipartRelated"/> part.
@@ -159,17 +159,18 @@ namespace MimeKit {
 					index = 0;
 				}
 
-				if (string.IsNullOrEmpty (value.ContentId))
-					value.ContentId = MimeUtils.GenerateMessageId ();
-
 				ContentType.Parameters["type"] = value.ContentType.MediaType + "/" + value.ContentType.MediaSubtype;
 
 				// Note: we only use a "start" parameter if the index of the root entity is not at index 0 in order
 				// to work around the following Thunderbird bug: https://bugzilla.mozilla.org/show_bug.cgi?id=471402
-				if (index > 0)
+				if (index > 0) {
+					if (string.IsNullOrEmpty (value.ContentId))
+						value.ContentId = MimeUtils.GenerateMessageId ();
+
 					ContentType.Parameters["start"] = "<" + value.ContentId + ">";
-				else
+				} else {
 					ContentType.Parameters.Remove ("start");
+				}
 			}
 		}
 
@@ -177,12 +178,12 @@ namespace MimeKit {
 		/// Dispatches to the specific visit method for this MIME entity.
 		/// </summary>
 		/// <remarks>
-		/// This default implementation for <see cref="MimeKit.MultipartRelated"/> nodes
-		/// calls <see cref="MimeKit.MimeVisitor.VisitMultipartRelated"/>. Override this
+		/// This default implementation for <see cref="MultipartRelated"/> nodes
+		/// calls <see cref="MimeVisitor.VisitMultipartRelated"/>. Override this
 		/// method to call into a more specific method on a derived visitor class
-		/// of the <see cref="MimeKit.MimeVisitor"/> class. However, it should still
+		/// of the <see cref="MimeVisitor"/> class. However, it should still
 		/// support unknown visitors by calling
-		/// <see cref="MimeKit.MimeVisitor.VisitMultipartRelated"/>.
+		/// <see cref="MimeVisitor.VisitMultipartRelated"/>.
 		/// </remarks>
 		/// <param name="visitor">The visitor.</param>
 		/// <exception cref="System.ArgumentNullException">

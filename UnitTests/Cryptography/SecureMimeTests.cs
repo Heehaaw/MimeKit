@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ using System.Security.Cryptography.X509Certificates;
 
 using NUnit.Framework;
 
+using Org.BouncyCastle.Cms;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Pkcs;
 
@@ -69,7 +70,7 @@ namespace UnitTests.Cryptography {
 				return;
 
 			using (var ctx = CreateContext ()) {
-				var dataDir = Path.Combine ("..", "..", "TestData", "smime");
+				var dataDir = Path.Combine (TestHelper.ProjectDir, "TestData", "smime");
 				string path;
 
 				if (ctx is TemporarySecureMimeContext)
@@ -185,7 +186,7 @@ namespace UnitTests.Cryptography {
 			Assert.Throws<NotSupportedException> (() => SecureMimeContext.GetDigestOid (DigestAlgorithm.Tiger192));
 
 			using (var ctx = CreateContext ()) {
-				var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret");
+				var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret");
 				var mailbox = new MailboxAddress ("Unit Tests", "example@mimekit.net");
 				var recipients = new CmsRecipientCollection ();
 				DigitalSignatureCollection signatures;
@@ -238,8 +239,8 @@ namespace UnitTests.Cryptography {
 				Assert.Throws<ArgumentNullException> (() => ctx.Verify (stream, null));
 				Assert.Throws<ArgumentNullException> (() => ctx.Verify (null, out signatures));
 				Assert.Throws<ArgumentNullException> (() => ctx.Verify (null, out entity));
-				Assert.Throws<ArgumentNullException> (async () => await ctx.VerifyAsync (null, stream));
-				Assert.Throws<ArgumentNullException> (async () => await ctx.VerifyAsync (stream, null));
+				Assert.ThrowsAsync<ArgumentNullException> (async () => await ctx.VerifyAsync (null, stream));
+				Assert.ThrowsAsync<ArgumentNullException> (async () => await ctx.VerifyAsync (stream, null));
 
 				entity = new MimePart { Content = new MimeContent (stream) };
 
@@ -485,7 +486,7 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public virtual void TestSecureMimeEncapsulatedSigningWithCmsSigner ()
 		{
-			var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret");
+			var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret", SubjectIdentifierType.SubjectKeyIdentifier);
 			var cleartext = new TextPart ("plain") { Text = "This is some text that we'll end up signing..." };
 
 			var signed = ApplicationPkcs7Mime.Sign (signer, cleartext);
@@ -527,7 +528,7 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public virtual void TestSecureMimeEncapsulatedSigningWithContextAndCmsSigner ()
 		{
-			var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret");
+			var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret", SubjectIdentifierType.SubjectKeyIdentifier);
 			var cleartext = new TextPart ("plain") { Text = "This is some text that we'll end up signing..." };
 
 			using (var ctx = CreateContext ()) {
@@ -560,7 +561,7 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public virtual void TestSecureMimeSigningWithCmsSigner ()
 		{
-			var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret");
+			var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret");
 			var body = new TextPart ("plain") { Text = "This is some cleartext that we'll end up signing..." };
 
 			var multipart = MultipartSigned.Create (signer, body);
@@ -609,7 +610,7 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public virtual void TestSecureMimeSigningWithContextAndCmsSigner ()
 		{
-			var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret");
+			var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret");
 			var body = new TextPart ("plain") { Text = "This is some cleartext that we'll end up signing..." };
 
 			using (var ctx = CreateContext ()) {
@@ -675,27 +676,35 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public virtual void TestSecureMimeSigningWithRsaSsaPss ()
 		{
-			var signer = new CmsSigner (Path.Combine ("..", "..", "TestData", "smime", "smime.pfx"), "no.secret") {
-				RsaSignaturePaddingScheme = RsaSignaturePaddingScheme.Pss
+			var signer = new CmsSigner (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "smime.pfx"), "no.secret") {
+				RsaSignaturePadding = RsaSignaturePadding.Pss
 			};
 			var body = new TextPart ("plain") { Text = "This is some cleartext that we'll end up signing..." };
 
-			var multipart = MultipartSigned.Create (signer, body);
-
-			Assert.AreEqual (2, multipart.Count, "The multipart/signed has an unexpected number of children.");
-
-			var protocol = multipart.ContentType.Parameters["protocol"];
-			Assert.AreEqual ("application/pkcs7-signature", protocol, "The multipart/signed protocol does not match.");
-
-			Assert.IsInstanceOf<TextPart> (multipart[0], "The first child is not a text part.");
-			Assert.IsInstanceOf<ApplicationPkcs7Signature> (multipart[1], "The second child is not a detached signature.");
-
-			var signatures = multipart.Verify ();
-			Assert.AreEqual (1, signatures.Count, "Verify returned an unexpected number of signatures.");
-
-			var signature = signatures[0];
-
 			using (var ctx = CreateContext ()) {
+				MultipartSigned multipart;
+
+				try {
+					multipart = MultipartSigned.Create (signer, body);
+				} catch (NotSupportedException) {
+					if (!(ctx is WindowsSecureMimeContext))
+						Assert.Fail ("RSASSA-PSS should be supported.");
+					return;
+				}
+
+				Assert.AreEqual (2, multipart.Count, "The multipart/signed has an unexpected number of children.");
+
+				var protocol = multipart.ContentType.Parameters["protocol"];
+				Assert.AreEqual ("application/pkcs7-signature", protocol, "The multipart/signed protocol does not match.");
+
+				Assert.IsInstanceOf<TextPart> (multipart[0], "The first child is not a text part.");
+				Assert.IsInstanceOf<ApplicationPkcs7Signature> (multipart[1], "The second child is not a detached signature.");
+
+				var signatures = multipart.Verify ();
+				Assert.AreEqual (1, signatures.Count, "Verify returned an unexpected number of signatures.");
+
+				var signature = signatures[0];
+
 				if (!(ctx is WindowsSecureMimeContext) || Path.DirectorySeparatorChar == '\\')
 					Assert.AreEqual ("MimeKit UnitTests", signature.SignerCertificate.Name);
 				Assert.AreEqual ("mimekit@example.com", signature.SignerCertificate.Email);
@@ -880,7 +889,7 @@ namespace UnitTests.Cryptography {
 		{
 			MimeMessage message;
 
-			using (var file = File.OpenRead (Path.Combine ("..", "..", "TestData", "smime", "thunderbird-signed.txt"))) {
+			using (var file = File.OpenRead (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "thunderbird-signed.txt"))) {
 				var parser = new MimeParser (file, MimeFormat.Default);
 				message = parser.ParseMessage ();
 			}
@@ -1093,16 +1102,56 @@ namespace UnitTests.Cryptography {
 			}
 		}
 
+		[TestCase (DigestAlgorithm.Sha1)]
+		[TestCase (DigestAlgorithm.Sha256)]
+		[TestCase (DigestAlgorithm.Sha384)]
+		[TestCase (DigestAlgorithm.Sha512)]
+		public virtual void TestSecureMimeEncryptionWithRsaesOaep (DigestAlgorithm hashAlgorithm)
+		{
+			var body = new TextPart ("plain") { Text = "This is some cleartext that we'll end up encrypting..." };
+
+			using (var ctx = CreateContext ()) {
+				var recipients = new CmsRecipientCollection ();
+
+				var recipient = new CmsRecipient (MimeKitCertificate, SubjectIdentifierType.IssuerAndSerialNumber);
+				recipient.EncryptionAlgorithms = new EncryptionAlgorithm[] { EncryptionAlgorithm.Aes128 };
+				recipient.RsaEncryptionPadding = RsaEncryptionPadding.CreateOaep (hashAlgorithm);
+				recipients.Add (recipient);
+
+				ApplicationPkcs7Mime encrypted;
+
+				try {
+					encrypted = ApplicationPkcs7Mime.Encrypt (ctx, recipients, body);
+				} catch (NotSupportedException) {
+					if (!(ctx is WindowsSecureMimeContext))
+						Assert.Fail ("RSAES-OAEP should be supported.");
+					return;
+				}
+
+				Assert.AreEqual (SecureMimeType.EnvelopedData, encrypted.SecureMimeType, "S/MIME type did not match.");
+
+				using (var stream = new MemoryStream ()) {
+					ctx.DecryptTo (encrypted.Content.Open (), stream);
+					stream.Position = 0;
+
+					var decrypted = MimeEntity.Load (stream);
+
+					Assert.IsInstanceOf<TextPart> (decrypted, "Decrypted part is not the expected type.");
+					Assert.AreEqual (body.Text, ((TextPart) decrypted).Text, "Decrypted content is not the same as the original.");
+				}
+			}
+		}
+
 		[Test]
 		public void TestSecureMimeDecryptThunderbird ()
 		{
-			var p12 = Path.Combine ("..", "..", "TestData", "smime", "gnome.p12");
+			var p12 = Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "gnome.p12");
 			MimeMessage message;
 
 			if (!File.Exists (p12))
 				return;
 
-			using (var file = File.OpenRead (Path.Combine ("..", "..", "TestData", "smime", "thunderbird-encrypted.txt"))) {
+			using (var file = File.OpenRead (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "thunderbird-encrypted.txt"))) {
 				var parser = new MimeParser (file, MimeFormat.Default);
 				message = parser.ParseMessage ();
 			}
@@ -1223,13 +1272,13 @@ namespace UnitTests.Cryptography {
 		[Test]
 		public void TestSecureMimeDecryptVerifyThunderbird ()
 		{
-			var p12 = Path.Combine ("..", "..", "TestData", "smime", "gnome.p12");
+			var p12 = Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "gnome.p12");
 			MimeMessage message;
 
 			if (!File.Exists (p12))
 				return;
 
-			using (var file = File.OpenRead (Path.Combine ("..", "..", "TestData", "smime", "thunderbird-signed-encrypted.txt"))) {
+			using (var file = File.OpenRead (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "thunderbird-signed-encrypted.txt"))) {
 				var parser = new MimeParser (file, MimeFormat.Default);
 				message = parser.ParseMessage ();
 			}
@@ -1329,6 +1378,60 @@ namespace UnitTests.Cryptography {
 
 					Assert.AreEqual (1, imported.certificates.Count, "Unexpected number of imported certificates.");
 					Assert.IsFalse (imported.keys.Count > 0, "One or more of the certificates included the private key.");
+				}
+			}
+		}
+
+		[Test]
+		public void TestSecureMimeVerifyMixedLineEndings ()
+		{
+			MimeMessage message;
+
+			using (var file = File.OpenRead (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "octet-stream-with-mixed-line-endings.dat"))) {
+				var parser = new MimeParser (file, MimeFormat.Default);
+				message = parser.ParseMessage ();
+			}
+
+			Assert.IsInstanceOf<MultipartSigned> (message.Body, "THe message body is not multipart/signed as expected.");
+
+			var signed = (MultipartSigned) message.Body;
+
+			using (var ctx = CreateContext ()) {
+				foreach (var signature in signed.Verify (ctx)) {
+					try {
+						bool valid = signature.Verify (true);
+
+						Assert.IsTrue (valid, "Bad signature from {0}", signature.SignerCertificate.Email);
+					} catch (DigitalSignatureVerifyException ex) {
+						Assert.Fail ("Failed to verify signature: {0}", ex);
+					}
+				}
+			}
+		}
+
+		[Test]
+		public async Task TestSecureMimeVerifyMixedLineEndingsAsync ()
+		{
+			MimeMessage message;
+
+			using (var file = File.OpenRead (Path.Combine (TestHelper.ProjectDir, "TestData", "smime", "octet-stream-with-mixed-line-endings.dat"))) {
+				var parser = new MimeParser (file, MimeFormat.Default);
+				message = await parser.ParseMessageAsync ();
+			}
+
+			Assert.IsInstanceOf<MultipartSigned> (message.Body, "THe message body is not multipart/signed as expected.");
+
+			var signed = (MultipartSigned) message.Body;
+
+			using (var ctx = CreateContext ()) {
+				foreach (var signature in await signed.VerifyAsync (ctx)) {
+					try {
+						bool valid = signature.Verify (true);
+
+						Assert.IsTrue (valid, "Bad signature from {0}", signature.SignerCertificate.Email);
+					} catch (DigitalSignatureVerifyException ex) {
+						Assert.Fail ("Failed to verify signature: {0}", ex);
+					}
 				}
 			}
 		}
@@ -1530,7 +1633,7 @@ namespace UnitTests.Cryptography {
 			if (Path.DirectorySeparatorChar != '\\')
 				return;
 
-			base.TestSecureMimeEncryption ();
+			base.TestSecureMimeEncryptionWithContext ();
 		}
 
 		[Test]
@@ -1540,6 +1643,18 @@ namespace UnitTests.Cryptography {
 				return;
 
 			base.TestSecureMimeEncryptionWithAlgorithm ();
+		}
+
+		[TestCase (DigestAlgorithm.Sha1)]
+		[TestCase (DigestAlgorithm.Sha256)]
+		[TestCase (DigestAlgorithm.Sha384)]
+		[TestCase (DigestAlgorithm.Sha512)]
+		public override void TestSecureMimeEncryptionWithRsaesOaep (DigestAlgorithm hashAlgorithm)
+		{
+			if (Path.DirectorySeparatorChar != '\\')
+				return;
+
+			base.TestSecureMimeEncryptionWithRsaesOaep (hashAlgorithm);
 		}
 
 		[Test]

@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ namespace UnitTests.Cryptography {
 		public void TestImportCertificates ()
 		{
 			var database = new SqliteCertificateDatabase ("smime.db", "no.secret");
-			var dataDir = Path.Combine ("..", "..", "TestData", "smime");
+			var dataDir = Path.Combine (TestHelper.ProjectDir, "TestData", "smime");
 			var certificates = new List<X509Certificate> ();
 
 			using (var ctx = new DefaultSecureMimeContext (database)) {

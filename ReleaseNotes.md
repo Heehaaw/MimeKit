@@ -1,5 +1,172 @@
 # Release Notes
 
+### MimeKit 2.10.1 (2020-12-05)
+
+* Treat message/disposition-notification and message/delivery-status the same as text/*
+  when preparing for signing. (issue [#626](https://github.com/jstedfast/MimeKit/issues/626))
+* Always set Content-Disposition: inline for BodyBuilder.LinkedResources. This fixes a
+  regression introduced in 2.10.0.
+  (issue [#627](https://github.com/jstedfast/MimeKit/issues/627))
+* Fixed NuGet package references to System.Data.DataSetExtensions for netstandard2.1 and
+  net4x.
+
+### MimeKit 2.10.0 (2020-11-20)
+
+* Added SQL Server support. (issue [#619](https://github.com/jstedfast/MimeKit/issues/619))
+* Fixed a leak in SqlCertificateDatabase when creating the certificates database.
+* Bumped BouncyCastle dependency to v1.8.8. (issue [#610](https://github.com/jstedfast/MimeKit/issues/610))
+* Exposed some ArcVerifier and DkimVerifier internal methods.
+  (issue [#601](https://github.com/jstedfast/MimeKit/issues/601))
+* Improved MimeParser performance.
+* Fixed potential leaks in MimeParser when loading MimePart content in exception cases.
+* Made use of ArrayPools for various buffers which may help performance.
+  (issue [#616](https://github.com/jstedfast/MimeKit/issues/616))
+* Fixed MimeUtils.GenerateMessageId() to encode international domain names.
+* Fixed MimeUtils.GenerateMessageId() to cache the local hostname.
+  (issue [#612](https://github.com/jstedfast/MimeKit/issues/612))
+* Modified AttachmentCollection to use a custom implementation of Path.GetFileName()
+  that allows illegal path characters.
+* Only generate a ContentId for the MultipartRelated Root if it is not the first part.
+
+### MimeKit 2.9.2 (2020-09-12)
+
+* Include WindowsSecureMimeContext in the .NET Standard 2.x build.
+  (issue [#600](https://github.com/jstedfast/MimeKit/issues/600))
+* Fixed message.Prepare() to never choose the quoted-printable encoding
+  for non-text based MimeParts.
+  (issue [#598](https://github.com/jstedfast/MimeKit/issues/598))
+* Added work-around for mailers that don't use a ';' between Content-Type
+  and Content-Disposition parameters.
+  (issue [#595](https://github.com/jstedfast/MimeKit/issues/595))
+* Added improved error reporting for ArcVerifier.
+  (issue [#591](https://github.com/jstedfast/MimeKit/issues/591))
+*  Added another work-around for parsing Authentication-Results headers.
+  (issue [#590](https://github.com/jstedfast/MimeKit/issues/590))
+* MimeMessage.ToString() now adds an X-MimeKit-Warning header to the
+  beginning of the output string to make it clear to developers doing this
+  that they are Doing it Wrong(tm).
+* Added a TLS-Required HeaderId enum value.
+
+### MimeKit 2.9.1 (2020-07-11)
+
+* Refactored OpenPgpContext to separate out key storage implementation.
+  (issue [#576](https://github.com/jstedfast/MimeKit/issues/576))
+* Fixed the TextToFlowed converter.
+  (issue [#580](https://github.com/jstedfast/MimeKit/issues/580))
+* Protect against ABRs in AuthenticationResults.TryParse().
+  (issue [#581](https://github.com/jstedfast/MimeKit/issues/581))
+* The net45 version of MimeKit now depends on Portable.BouncyCastle instead of official
+  BouncyCastle.
+* Added MimeParser events to report stream offsets for MimeMessages and MimeEntities.
+  (issue [#582](https://github.com/jstedfast/MimeKit/issues/582))
+* Fixed DkimPublicKeyLocatorBase to treat unspecified 'k' values in DKIM DNS records as
+  "k=rsa".
+  (issue [#583](https://github.com/jstedfast/MimeKit/issues/583))
+* Fixed date format serializer to use CultureInfo.InvariantCulture.
+* Fixed AuthenticationResults parser to allow '_' characters in method results.
+  (issue [#584](https://github.com/jstedfast/MimeKit/issues/584))
+* Improved RSACng and DSACng support.
+
+### MimeKit 2.8.0 (2020-05-30)
+
+* Improved logic for verifying signatures for MimeParts containing mixed line endings.
+  (issue [#569](https://github.com/jstedfast/MimeKit/issues/569))
+* Fixed MailboxAddress parser to decode IDN-encoded local-parts of email addresses.
+  (MailKit issue [#1026](https://github.com/jstedfast/MailKit/issues/1026))
+* Added new MailboxAddress.GetAddress(bool idnEncode) method.
+* Improved subclassability of OpenPgpContext by making a number of methods virtual.
+  (issue [#571](https://github.com/jstedfast/MimeKit/issues/571))
+* Added support for RSACng and DSACng.
+  (issue [#567](https://github.com/jstedfast/MimeKit/issues/567))
+* Dropped Xamarin platforms since they are compatible with netstandard2.0.
+
+### MimeKit 2.7.0 (2020-05-19)
+
+* Fixed InternetAddressList.Insert() to allow inserting at the end of the list.
+  (issue [#559](https://github.com/jstedfast/MimeKit/issues/559))
+* Added ParserOptions.MaxMimeDepth to allow developers to set the max nesting depth
+  allowed by the parser.
+* Added logic to handle multipart children without any headers or content.
+* Added a new Verify(bool verifySignatureOnly) method to IDigitalSignature for
+  developers who just want to be able to verify the signature without worrying
+  about the certificate chain.
+* Fixed MimePart.WriteTo() to avoid canonicalizing line endings for MimeParts that
+  do not define a Content-Transfer-Encoding.
+  (issue [#569](https://github.com/jstedfast/MimeKit/issues/569))
+* NuGet packages now include the portable pdb's.
+
+### MimeKit 2.6.0 (2020-04-03)
+
+* Fixed the MimeEntity.ContentId setter to use ParseUtils.TryParseMsgId() instead of
+  MailboxAddress.TryParse() so that it is more lenient in what it accepts.
+  (issue [#542](https://github.com/jstedfast/MimeKit/issues/542))
+* Added an HtmlTokenizer.IgnoreTruncatedTags property which is useful when working with
+  truncated HTML.
+* Optimized the heck out of HtmlEntityDecoder.
+* Added a TextPart.Format property for a quick way to determine the type of text it
+  contains.
+* Added text/plain and text/html preview/snippet generators (PlainTextPreviewer and
+  HtmlTextPreviewer, respectively). This is part of a larger improvement to MailKit's
+  text preview feature for IMAP.
+  (MailKit issue [#1001](https://github.com/jstedfast/MailKit/issues/1001))
+* Fixed SqlCertificateDatabase to accept null SubjectKeyIdentifiers.
+* Changed Header.FormatRawValue() to be protected virtual and added Header.SetRawValue()
+  to allow developers to override the default formatting behavior by either subclassing
+  Header or by calling header.SetRawValue().
+  (issue [#546](https://github.com/jstedfast/MimeKit/issues/546))
+* Switched MimeKit for Android and iOS over to using Portable.BouncyCastle.
+* Added MimeTypes.Register() to allow developers to register their own mime-type mappings
+  to file extensions.
+
+### MimeKit 2.5.2 (2020-03-14)
+
+* Updated net46, net47, and net48 builds to reference Portable.BouncyCastle instead of
+  the standard BouncyCastle package, just like the netstandard builds.
+  (issue [#540](https://github.com/jstedfast/MimeKit/issues/540))
+* Fixed extraction of TNEF EmbeddedMessage attachment data to skip the leading GUID.
+  (issue [#538](https://github.com/jstedfast/MimeKit/issues/538))
+* Added a few more TNEF property tags.
+* Fixed the HtmlEntityDecoder to require some named attributes to end with a `;`.
+
+### MimeKit 2.5.1 (2020-02-15)
+
+* Fixed parsing of email addresses containing unicode or other types of 8-bit text.
+  (issue [#536](https://github.com/jstedfast/MimeKit/issues/536))
+* Added a MimeTypes.TryGetExtension() method to try and get a file name extension
+  based on a mime-type.
+  (issue [#534](https://github.com/jstedfast/MimeKit/issues/534))
+* Updated mime-type mappings.
+
+### MimeKit 2.5.0 (2020-01-18)
+
+* Fixed message reserialization after prepending headers.
+  (issue [#524](https://github.com/jstedfast/MimeKit/issues/524))
+* Added a ContentType.CharsetEncoding property.
+  (issue [#526](https://github.com/jstedfast/MimeKit/issues/526))
+* Allow empty prop-spec token values in Authentication-Results headers.
+  (issue [#527](https://github.com/jstedfast/MimeKit/issues/527))
+* Added logic to quote Authentication-Results pvalue tokens if needed.
+* Added support for converting RSACng keys into BouncyCastle keys for
+  net4x versions that support it.
+* Added support for RSAES-OAEP for the BouncyCastle backend.
+  (issue [#528](https://github.com/jstedfast/MimeKit/issues/528))
+* Updated and changed the API for RSASSA-PSS. CmsSigner now has a
+  RsaSignaturePadding property which obsoletes the previous
+  RsaSignaturePaddingScheme property.
+* Added more columns to the default SQLite database CERTIFICATES table
+  that allow more optimal SQL searches for certificates given various
+  matching criteria.
+* Fixed WindowsSecureMimeContext.Decrypt() to make sure it doesn't stop
+  at the first failed recipient.
+  (issue [#530](https://github.com/jstedfast/MimeKit/issues/530))
+* Fixed splitting and reassembly of message/partial messages.
+* Improved handling of Office365 Authentication-Results headers by adding
+  a Office365AuthenticationServiceIdentifier property to the
+  AuthenticationMethodResult class.
+* Fixed mailbox address parser to be more lenient about `"["` and `"]"`
+  characters in the display-name.
+  (issue [#532](https://github.com/jstedfast/MimeKit/issues/532))
+
 ### MimeKit 2.4.1 (2019-11-10)
 
 * Don't use PublicSign on non-Windows NT machines when building.

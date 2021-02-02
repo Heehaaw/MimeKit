@@ -3,7 +3,7 @@
 //
 // Author: Jeffrey Stedfast <jestedfa@microsoft.com>
 //
-// Copyright (c) 2013-2019 Xamarin Inc. (www.xamarin.com)
+// Copyright (c) 2013-2020 .NET Foundation and Contributors
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,8 @@ namespace UnitTests {
 			Assert.AreEqual (3, related.Count, "Count");
 			Assert.AreEqual (root, related.Root, "Root");
 			Assert.AreEqual (root, related[2], "Root should be the 3rd item.");
-			Assert.IsNotNullOrEmpty (root.ContentId, "Root's Content-Id should not be null.");
+			Assert.IsNotNull (root.ContentId, "Root's Content-Id should not be null.");
+			Assert.IsNotEmpty (root.ContentId, "Root's Content-Id should not be empty.");
 
 			start = "<" + root.ContentId + ">";
 
@@ -99,7 +100,7 @@ namespace UnitTests {
 		[Test]
 		public void TestDocumentRootByType ()
 		{
-			var related = (MultipartRelated) MimeEntity.Load (Path.Combine ("..", "..", "TestData", "messages", "multipart-related-mhtml.txt"));
+			var related = (MultipartRelated) MimeEntity.Load (Path.Combine (TestHelper.ProjectDir, "TestData", "messages", "multipart-related-mhtml.txt"));
 
 			Assert.AreEqual (2, related.Count, "Count");
 
@@ -143,7 +144,7 @@ namespace UnitTests {
 			// Note: MimeKit no longer sets the "start" parameter if the root is the first MIME part due to a bug in Thunderbird.
 			Assert.IsNull (related.ContentType.Parameters["start"], "The start parameter should be null.");
 
-			for (int i = 0; i < related.Count; i++) {
+			for (int i = 1; i < related.Count; i++) {
 				var cid = new Uri (string.Format ("cid:{0}", related[i].ContentId));
 				string mimeType, charset;
 
